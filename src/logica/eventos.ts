@@ -3,9 +3,8 @@
 // Quando o app abre (ou a cada 15 s com ele aberto), estas funções puras aplicam os eventos
 // com a MESMA lógica do app (src/logica/jogo.ts): beber() conta o copo na hora em que ele foi tomado.
 import * as L from './jogo';
-
-export type TipoEvento = 'toque' | 'bebi' | 'soneca';
-export interface Evento { tipo: TipoEvento; t: number }
+import type { Aplicado, Evento } from '../tipos';
+export type { Aplicado, Evento, TipoEvento } from '../tipos';
 
 /** Lê a lista que vem do lado nativo (JSON). Ignora lixo e devolve em ordem de horário. */
 export function lerEventos(texto: string | null | undefined): Evento[] {
@@ -17,8 +16,6 @@ export function lerEventos(texto: string | null | undefined): Evento[] {
     .map((x) => ({ tipo: x.tipo, t: x.t }))
     .sort((a1, b1) => a1.t - b1.t);
 }
-
-export interface Aplicado { copos: number; resultados: L.Resultado[]; ultimo: TipoEvento | null }
 
 /** Copo de um dia que já passou (o estado já virou o dia): só soma no histórico daquele dia. */
 function beberDiaPassado(e: L.Estado, t: number): void {

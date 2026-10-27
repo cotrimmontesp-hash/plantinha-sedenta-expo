@@ -2,13 +2,14 @@
 // Na web o AsyncStorage usa o localStorage do navegador.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as L from '../logica/jogo';
-import { carregarComEventos, type Aplicado, type Evento } from '../logica/eventos';
+import { carregarComEventos } from '../logica/eventos';
+import type { Dados, Evento } from '../tipos';
+export type { Dados } from '../tipos';
 
 export const CHAVE = 'plantinhaSedenta.v1';
 export const CHAVE_D = 'plantinhaSedenta.despertador';
 export const CHAVE_M = 'plantinhaSedenta.medalhas';
 
-export interface Dados { est: L.Estado; desp: L.Despertador; ganhas: L.Medalhas; alarme: Aplicado }
 
 /** Carrega tudo. `eventos`: o que o alarme do Android gravou com o app fechado (Já bebi / Daqui a pouco). */
 export async function carregarTudo(agora: number, eventos: Evento[] = []): Promise<Dados> {
