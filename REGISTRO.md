@@ -54,3 +54,29 @@ Data: 27/10/2026 (America/Sao_Paulo). Origem: PWA v5 em /workspace/jogos/agua/pw
 3. Instalar o app Vercel: https://github.com/apps/vercel/installations/new → "Only select repositories" → escolher o repo.
 4. Depois um agente faz: `git remote add origin <url> && git push -u origin main` e `vercel git connect <url>`.
 5. Para o APK: criar conta em https://expo.dev e rodar `npx eas-cli build -p android --profile preview`.
+
+## 27/10/2026 — Lembrete com o app fechado (branch `feature/lembretes-fechado`)
+Pedido: Paulo autorizou (via Coordenador de Apps) o lembrete tocar com o app fechado e a tela apagada no Android, e gerar o APK.
+- Base: `main` do GitHub (e7bcfd3, merge do PR #1; árvore idêntica a 919b90b local).
+- `src/agenda.ts`: `horariosLembretes(desp, ultimoGole, agora)` → todos os lembretes dos próximos 7 dias (teto 60), mesma regra do despertador do app (intervalo, janela, soneca, último copo). Testes novos em `__tests__/agenda.test.js` (13).
+- `src/notificacoes.native.ts`: agenda a lista inteira (ids `lembrete-<ms>`), alarme exato `delivery: 'alarmClock'`, canal `lembrete-agua` (importância MAX, som `alarme.wav`, vibração, visível na tela bloqueada); apaga o canal antigo `despertador`. Pede notificações e, se faltar, "Alarmes e lembretes" com explicação em português. Botão "⏱️ Testar lembrete em 1 min" (só Android/iOS).
+- `App.tsx`: reagenda quando muda ligado/intervalo/início/fim/soneca/último toque/último copo/permissões e ao voltar para o app. Web inalterada (funções vazias em `src/notificacoes.ts`).
+- `app.json`: permissões POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM, USE_EXACT_ALARM, RECEIVE_BOOT_COMPLETED; plugin expo-notifications com `sounds: ["./assets/alarme.wav"]`.
+- Reboot: o expo-notifications já tem receiver de BOOT_COMPLETED/MY_PACKAGE_REPLACED que reagenda os avisos salvos.
+- Decisão: som do canal no fluxo normal de notificação (não no volume de alarme), para respeitar o modo silencioso.
+- Commits com autor `cotrimmontesp-hash <348075526+cotrimmontesp-hash@users.noreply.github.com>` (config local do repo).
+
+### APK
+- Compilado na box, sem EAS e sem conta Expo: Temurin JDK 17 (/home/box/jdk17), Android SDK (/home/box/android-sdk: platform 37.0, build-tools 37.0.0, NDK 27.1, CMake 3.22.1), swap de 10 GB.
+- `npx expo prebuild -p android` + `./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a` (só arm64: o A23 é arm64). BUILD SUCCESSFUL em ~4 min.
+- Assinado com a chave de **debug** do template (CN=Android Debug): só para instalação direta, não serve para a Google Play.
+- Pasta `android/` apagada depois (o projeto continua "managed").
+- Arquivo: `/workspace/jogos/agua-expo-entrega/plantinha-sedenta.apk` — 26.313.395 bytes, sha256 `d26d29e60ad671134ad4f87c7c925a48557c522f0e702fba12fc099692498073`, minSdk 24, targetSdk 36, arm64-v8a. Conferido com aapt2: permissões acima e `raw/alarme` dentro do APK.
+- **Não testado em aparelho**: tentei um emulador Android 14 x86_64 na box, mas ele não chegou a ligar (ficou "offline"). O teste real é o checklist do README no A23.
+
+### Testes (rodados de verdade)
+- `tsc --noEmit`: OK
+- Jest: **100/100** (87 antigos + 13 da agenda)
+- expo-doctor: 20/20
+- `expo export -p web`: OK; teste web no Chrome headless: 35/35 (comportamento web igual)
+- `expo prebuild -p android`: AndroidManifest com POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM, USE_EXACT_ALARM, RECEIVE_BOOT_COMPLETED, VIBRATE e o receiver de boot do expo-notifications; som em `res/raw/alarme.wav`. O canal `lembrete-agua` é criado pelo app ao rodar (não fica no manifest).
