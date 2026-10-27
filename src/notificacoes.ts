@@ -27,6 +27,15 @@ export function agendarLembretes(_lista: number[]): void { /* nada na web */ }
 export async function alarmeExato(): Promise<boolean> { return true; }
 export async function pedirAlarmeExato(): Promise<boolean> { return true; }
 export async function testarLembrete(_segundos: number): Promise<number | null> { return null; }
+/* Alarme nativo: só no APK Android. Na web nada muda. */
+export const ALARME_NATIVO = false;
+export function sincronizarAlarme(_d: unknown, _ultimoGole: number | null): number | null { return null; }
+export function eventosAlarme(): { tipo: 'toque' | 'bebi' | 'soneca'; t: number }[] { return []; }
+export function apagarEventosAlarme(_ate: number): void { /* nada na web */ }
+export function alarmeTocando(): boolean { return false; }
+export function responderAlarme(_bebi: boolean): void { /* nada na web */ }
+export async function telaCheia(): Promise<boolean> { return true; }
+export async function pedirTelaCheia(): Promise<boolean> { return true; }
 export function registrarServiceWorker(): void {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator) || __DEV__) return;
   window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {}); });
