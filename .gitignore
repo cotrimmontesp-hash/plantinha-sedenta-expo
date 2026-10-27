@@ -41,3 +41,7 @@ yarn-error.*
 /android
 .vercel
 .env*
+
+# build do módulo nativo local
+modules/*/android/build/
+modules/*/android/.gradle/

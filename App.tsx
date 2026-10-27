@@ -6,7 +6,8 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import * as L from './src/logica';
 import { carregarTudo, salvarDesp, salvarEstado, salvarMedalhas } from './src/armazenamento';
-import { AVISA_FECHADO, agendarLembretes, alarmeExato, notificar, pedirAlarmeExato, pedirPermissao, permissao, testarLembrete } from './src/notificacoes';
+import { ALARME_NATIVO, AVISA_FECHADO, agendarLembretes, alarmeExato, alarmeTocando, apagarEventosAlarme, eventosAlarme, notificar, pedirAlarmeExato, pedirPermissao, pedirTelaCheia, permissao, responderAlarme, sincronizarAlarme, telaCheia, testarLembrete } from './src/notificacoes';
+import { aplicarEventos, type Aplicado } from './src/eventos';
 import { horariosLembretes } from './src/agenda';
 import { pararSom, prepararSom, somTocando, tocarSom } from './src/som';
 import { vibrar } from './src/vibrar';
@@ -62,6 +63,7 @@ function Jogo() {
   const [copoTemp, setCopoTemp] = useState(250);
   const [perm, setPerm] = useState<string>('default');
   const [exato, setExato] = useState(true);
+  const [telaOk, setTelaOk] = useState(true);
   const [reabriu, setReabriu] = useState(0);
   const [gotas, setGotas] = useState<number[]>([]);
   const [festa, setFesta] = useState(0);
@@ -95,10 +97,38 @@ function Jogo() {
     render();
   }, [msgF]);
 
+  /** Mostra o que o alarme do Android fez com o app fechado (copos do "Já bebi", soneca). */
+  const avisarAlarme = useCallback((r: Aplicado) => {
+    if (r.copos > 0) {
+      const e = est.current;
+      setGotas((g) => [...g, Date.now()]);
+      if (r.resultados.indexOf('bateu') >= 0 && L.bateuMeta(e)) { setFesta((f) => f + 1); msgF('🌸 Meta do dia batida pelo alarme! Sequência: ' + L.sequenciaVisivel(e) + ' dia(s).'); }
+      else msgF('💧 ' + (r.copos > 1 ? r.copos + ' copos registrados' : 'Copo registrado') + ' pelo alarme. Agora são ' + e.copos + '/' + e.meta + '.');
+    } else if (r.ultimo === 'soneca' && desp.current.soneca) msgF('😴 Soneca: toco de novo às ' + L.hhmm(desp.current.soneca) + '.');
+  }, [msgF]);
+
+  /** Android: aplica os eventos do alarme nativo (gravados enquanto o app estava fechado ou em segundo plano). */
+  const puxarEventos = useCallback(() => {
+    const ev = eventosAlarme();
+    if (!ev.length) return;
+    const r = aplicarEventos(est.current, desp.current, ev);
+    L.virarDia(est.current, Date.now());
+    salvarEstado(est.current); salvarDesp(desp.current);
+    apagarEventosAlarme(ev[ev.length - 1].t);
+    if (r.copos > 0 || r.ultimo === 'soneca') mostrarAlarme(false); // respondido na tela de alarme do Android
+    avisarAlarme(r);
+    render(); conferirMedalhas();
+  }, [avisarAlarme, conferirMedalhas]);
+
   const conferirAlarme = useCallback(() => {
+    if (ALARME_NATIVO) { // no Android quem toca é o alarme nativo (até com o app aberto)
+      puxarEventos();
+      if (alarmeTocando() && !alarmeRef.current) { setDlg(false); mostrarAlarme(true); } // botões também no app (ex.: notificações bloqueadas)
+      render(); return;
+    }
     if (!alarmeRef.current && L.deveTocar(desp.current, est.current.ultimoGole, Date.now())) dispararAlarme(false); // 1 vez só
     render();
-  }, [dispararAlarme]);
+  }, [dispararAlarme, puxarEventos]);
 
   const verificar = useCallback(() => {
     const e = est.current, antes = e.dia;
@@ -116,24 +146,26 @@ function Jogo() {
   // carregar
   useEffect(() => {
     let vivo = true;
-    carregarTudo(Date.now()).then((d) => {
+    const ev = eventosAlarme(); // Android: o que o alarme gravou com o app fechado
+    carregarTudo(Date.now(), ev).then((d) => {
       if (!vivo) return;
       est.current = d.est; desp.current = d.desp; ganhas.current = d.ganhas;
       abertura.current = Date.now();
       msgF(d.est.copos === 0 ? "Olá! Toque no botão amarelo a cada copo d'água 💧" : 'Bem-vindo de volta! ' + d.est.copos + ' copo(s) hoje.');
+      if (ev.length) { salvarEstado(d.est); salvarDesp(d.desp); apagarEventosAlarme(ev[ev.length - 1].t); avisarAlarme(d.alarme); }
       setPronto(true);
       SplashScreen.hideAsync().catch(() => {});
       conferirMedalhas(true); // dados antigos: concede as que já valem (sem vibrar)
-      permissao().then(setPerm); alarmeExato().then(setExato);
+      permissao().then(setPerm); alarmeExato().then(setExato); telaCheia().then(setTelaOk);
     });
     return () => { vivo = false; };
-  }, [conferirMedalhas, msgF]);
+  }, [conferirMedalhas, msgF, avisarAlarme]);
 
   // relógios: virada de dia/sede a cada 30 s, despertador a cada 15 s, e ao voltar para o app
   useEffect(() => {
     if (!pronto) return;
     const a = setInterval(verificar, 30000), b = setInterval(conferirAlarme, 15000);
-    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') { verificar(); conferirAlarme(); permissao().then(setPerm); alarmeExato().then(setExato); setReabriu((n) => n + 1); } });
+    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') { verificar(); conferirAlarme(); permissao().then(setPerm); alarmeExato().then(setExato); telaCheia().then(setTelaOk); setReabriu((n) => n + 1); } });
     conferirAlarme();
     return () => { clearInterval(a); clearInterval(b); sub.remove(); };
   }, [pronto, verificar, conferirAlarme]);
@@ -143,7 +175,9 @@ function Jogo() {
   // app fechado: agenda no celular TODOS os lembretes dos próximos dias; refaz ao abrir, beber, tocar e mudar a config
   const chaveAgenda = [d.ligado, d.intervalo, d.inicio, d.fim, d.soneca, d.ultimoToque, d.ligadoEm, e.ultimoGole, perm, exato, reabriu].join('|');
   useEffect(() => {
-    if (pronto) agendarLembretes(horariosLembretes(desp.current, est.current.ultimoGole, Date.now()));
+    if (!pronto) return;
+    if (ALARME_NATIVO) sincronizarAlarme(desp.current, est.current.ultimoGole); // Android: alarme nativo em loop
+    else agendarLembretes(horariosLembretes(desp.current, est.current.ultimoGole, Date.now()));
   }, [pronto, chaveAgenda]);
 
   // ganchos para os testes no navegador (só web)
@@ -188,20 +222,21 @@ function Jogo() {
       d.ligadoEm = Date.now(); prepararSom();
       (perm === 'default' ? pedirPermissao() : Promise.resolve(perm)).then((p) => {
         setPerm(p);
-        if (p === 'granted' && AVISA_FECHADO) pedirAlarmeExato().then(setExato);
+        if (p === 'granted' && AVISA_FECHADO) pedirAlarmeExato().then(setExato).then(() => (ALARME_NATIVO ? pedirTelaCheia().then(setTelaOk) : undefined));
       });
     }
     salvarDesp(d); render();
   };
   const mudarDesp = (k: 'intervalo' | 'inicio' | 'fim', v: number | string) => { (d as unknown as Record<string, unknown>)[k] = v; salvarDesp(d); render(); };
   const soneca = () => {
+    if (alarmeTocando()) { responderAlarme(false); mostrarAlarme(false); puxarEventos(); return; } // alarme nativo: ele grava a soneca
     const t = L.soneca(d, Date.now()); salvarDesp(d); mostrarAlarme(false);
     msgF('😴 Soneca: toco de novo às ' + L.hhmm(t) + '.'); render();
   };
   const testarFechado = () => {
     testarLembrete(60).then((t) => {
       permissao().then(setPerm);
-      msgF(t === null ? '🔕 Não deu para agendar: permita as notificações do app nas configurações do celular.' : '🧪 Teste agendado para ' + L.hhmm(t) + '. Feche o app e apague a tela agora.', t === null);
+      msgF(t === null ? '🔕 Não deu para agendar: permita as notificações do app nas configurações do celular.' : (ALARME_NATIVO ? '🧪 Teste às ' + L.hhmm(t) + '. Apague a tela agora: vai tocar até você tocar em Já bebi ou Daqui a pouco.' : '🧪 Teste agendado para ' + L.hhmm(t) + '. Feche o app e apague a tela agora.'), t === null);
     });
   };
   const txtNotif = perm === 'granted' ? '🔔 Lembretes ativados ✅' : perm === 'denied' ? '🔕 Lembretes bloqueados' + (Platform.OS === 'web' ? ' no navegador' : ' no celular') : perm === 'indisponivel' ? '🔔 Lembretes do celular indisponíveis aqui' : '🔔 Ativar lembretes do celular';
@@ -295,7 +330,8 @@ function Jogo() {
             <Botao testID="dTeste" onPress={() => { prepararSom(); dispararAlarme(true); }} style={[st.sec, st.cheio]} textStyle={st.secTx}>🔊 Testar despertador</Botao>
             {AVISA_FECHADO && <Botao testID="dTesteFechado" onPress={testarFechado} style={[st.sec, st.cheio]} textStyle={st.secTx}>⏱️ Testar lembrete em 1 min</Botao>}
             {AVISA_FECHADO && d.ligado && !exato && <Botao testID="dExato" onPress={() => pedirAlarmeExato().then(setExato)} style={[st.sec, st.cheio]} textStyle={st.secTx}>⚠️ Permitir alarmes na hora certa</Botao>}
-            <Text style={st.aviso}>{Platform.OS === 'web' ? 'Mantenha o app aberto; ele toca enquanto estiver aberto ou recém-fechado.' : 'Com o app aberto, toca o alarme. Com o app fechado ou a tela apagada, o celular toca o lembrete (precisa das notificações ativadas). Celular desligado não toca.'}</Text>
+            {ALARME_NATIVO && d.ligado && !telaOk && <Botao testID="dTela" onPress={() => pedirTelaCheia().then(setTelaOk)} style={[st.sec, st.cheio]} textStyle={st.secTx}>⚠️ Permitir alarme em tela cheia</Botao>}
+            <Text style={st.aviso}>{Platform.OS === 'web' ? 'Mantenha o app aberto; ele toca enquanto estiver aberto ou recém-fechado.' : ALARME_NATIVO ? 'Toca como despertador, até com o app fechado e a tela bloqueada, e só para quando você tocar em "Já bebi" ou "Daqui a pouco". Precisa das notificações ativadas. Celular desligado não toca.' : 'Com o app aberto, toca o alarme. Com o app fechado ou a tela apagada, o celular toca o lembrete (precisa das notificações ativadas). Celular desligado não toca.'}</Text>
           </View>
           <Text style={st.aviso}>A meta é só uma referência ajustável, não é orientação médica. Na dúvida, converse com seu médico.</Text>
         </View>
@@ -330,7 +366,7 @@ function Jogo() {
         <View style={[st.veu, { backgroundColor: 'rgba(0,0,0,.88)' }]} accessibilityRole="alert">
           <View style={[st.dialogo, { borderWidth: 3, gap: 14 }]}>
             <Text testID="alTit" style={st.alTit}>💧 Hora de beber água!</Text>
-            <Botao testID="alBebi" onPress={() => { mostrarAlarme(false); beber(); }} style={st.alBebi} textStyle={st.alBebiTx}>Bebi um copo 💧</Botao>
+            <Botao testID="alBebi" onPress={() => { mostrarAlarme(false); if (alarmeTocando()) { responderAlarme(true); puxarEventos(); } else beber(); }} style={st.alBebi} textStyle={st.alBebiTx}>Bebi um copo 💧</Botao>
             <Botao testID="alSoneca" onPress={soneca} style={[st.sec, st.cheio]} textStyle={st.secTx}>😴 Soneca 10 min</Botao>
           </View>
         </View>

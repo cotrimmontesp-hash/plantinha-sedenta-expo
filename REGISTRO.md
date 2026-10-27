@@ -80,3 +80,25 @@ Pedido: Paulo autorizou (via Coordenador de Apps) o lembrete tocar com o app fec
 - expo-doctor: 20/20
 - `expo export -p web`: OK; teste web no Chrome headless: 35/35 (comportamento web igual)
 - `expo prebuild -p android`: AndroidManifest com POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM, USE_EXACT_ALARM, RECEIVE_BOOT_COMPLETED, VIBRATE e o receiver de boot do expo-notifications; som em `res/raw/alarme.wav`. O canal `lembrete-agua` é criado pelo app ao rodar (não fica no manifest).
+
+## 27/10/2026 — Alarme em loop com tela cheia (branch `feature/alarme-tela-cheia`, v1.1.0 / versionCode 2)
+Pedido: Paulo pediu (via Coordenador de Apps) que o lembrete toque como alarme de celular: som em loop até responder, tela acendendo por cima da tela bloqueada, e só parar com "Já bebi" ou "Daqui a pouco" (10 min).
+- Base: `main` do GitHub (1417f1d, merge do PR #2; árvore igual à `feature/lembretes-fechado`).
+- Decisão: módulo nativo local (`modules/plantinha-alarme`, Java + ponte Kotlin do Expo, autolinking) em vez de só expo-notifications. Motivo: expo-notifications não tem `fullScreenIntent` nem som em loop; `FLAG_INSISTENT` sozinho para quando abre a cortina de notificações. O módulo tem AlarmManager exato → receptor → serviço em primeiro plano com MediaPlayer em loop (USAGE_ALARM) + vibração em loop → notificação de alarme com tela cheia e 2 ações → Activity `showWhenLocked`/`turnScreenOn`. Reserva: notificação insistente se o serviço não puder começar.
+- Lógica: `Regra.java` copia as regras de `src/logica.ts`; `__tests__/regraJava.test.js` compila e compara com o JS e com a agenda de 7 dias em 3000 casos (mutação no Java faz o teste falhar: conferido). O nativo agenda 1 alarme por vez e encadeia (mesmos horários da agenda de 7 dias, sem limite de dias).
+- Respostas com o app fechado viram eventos no celular; `src/eventos.ts` (`aplicarEventos`, `carregarComEventos`) aplica com `beber()`/`soneca()`/`marcarToque()` do app ao abrir e a cada 15 s. Testes novos em `__tests__/eventos.test.js` (11).
+- App: no Android o alarme do app não dispara (quem toca é o nativo); se o nativo estiver tocando e o app estiver aberto, a tela de alarme do app aparece e os botões param o nativo. Botão ⚠️ "Permitir alarme em tela cheia" (Android 14+). Remove os avisos antigos do expo-notifications ao abrir. Web e iOS sem mudança.
+- Reboot / atualização / mudança de hora: `ReceptorBoot` agenda de novo (só depois de o app ter sido aberto 1 vez na versão nova).
+- `app.json`: versão 1.1.0, versionCode 2; permissões novas USE_FULL_SCREEN_INTENT, FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK, WAKE_LOCK. SYSTEM_ALERT_WINDOW continua bloqueada.
+
+### Testes (rodados de verdade)
+- `tsc --noEmit`: OK
+- Jest: **112/112** (100 antigos + 11 eventos + 1 paridade Java×JS com 3000 casos)
+- expo-doctor: 17/18 — a única falha é "expo 58.0.19, esperado ~58.0.20" (patch novo publicado; a mesma falha aparece na `main` sem as mudanças). Não atualizei para não mexer em dependência.
+- `expo export -p web`: OK; teste web no Chrome headless: **35/35** (web igual).
+- `expo prebuild -p android` + manifest final do APK (aapt2): USE_FULL_SCREEN_INTENT, FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK, WAKE_LOCK, SCHEDULE_EXACT_ALARM, USE_EXACT_ALARM, POST_NOTIFICATIONS, RECEIVE_BOOT_COMPLETED; AlarmeActivity (showWhenLocked, turnScreenOn), AlarmeServico (foregroundServiceType mediaPlayback), Receptor, ReceptorBoot (BOOT_COMPLETED, MY_PACKAGE_REPLACED, TIME_SET, TIMEZONE_CHANGED); `raw/alarme` e `drawable/notification_icon` presentes.
+
+### APK
+- `/workspace/jogos/agua-expo-entrega/plantinha-sedenta-alarme.apk` — 26.339.667 bytes, sha256 `87b9f315df6a8b15f2e8b2f70c53529211e8ac8663ae73cba71e873ba1b656d2`, versionName 1.1.0, versionCode 2, arm64-v8a, minSdk 24, targetSdk 36.
+- Assinatura: mesma chave de debug do APK anterior (certificado SHA-256 `fac61745…033b9c` nos dois, conferido com apksigner), então instala por cima sem desinstalar.
+- **Não testado em aparelho**: tentei de novo o emulador Android 14 x86_64 da box (KVM disponível), mas ele ficou "offline" e parado (CPU ~0%), igual à vez anterior. O teste real é o checklist do README no A23.
