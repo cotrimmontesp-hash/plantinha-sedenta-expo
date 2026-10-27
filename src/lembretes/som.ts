@@ -10,7 +10,7 @@ function tocador(): AudioPlayer | null {
   try {
     if (!player) {
       setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: false, interruptionMode: 'duckOthers' }).catch(() => {});
-      player = createAudioPlayer(require('../assets/alarme.wav'));
+      player = createAudioPlayer(require('../../assets/alarme.wav'));
     }
     return player;
   } catch { return null; }

@@ -1,5 +1,5 @@
-// Portado de /workspace/jogos/agua/testes/teste-medalhas-logica.js (PWA v5). Mesmas verificações, agora contra src/logica.ts.
-const L=require('../src/logica');
+// Portado de /workspace/jogos/agua/testes/teste-medalhas-logica.js (PWA v5). Mesmas verificações, agora contra src/logica/jogo.ts.
+const L=require('../src/logica/jogo');
 const checks=[];
 const t=s=>Date.parse(s+'-03:00');let n=0;const ok=(c,msg)=>{n++;checks.push([msg,!!c]);};
 const A=(e,d,g)=>L.avaliarMedalhas(e,d||L.novoDesp(),e.dia,g||{});

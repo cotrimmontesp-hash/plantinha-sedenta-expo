@@ -4,16 +4,16 @@ import { AppState, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, Vie
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import * as L from './src/logica';
-import { carregarTudo, salvarDesp, salvarEstado, salvarMedalhas } from './src/armazenamento';
-import { ALARME_NATIVO, AVISA_FECHADO, agendarLembretes, alarmeExato, alarmeTocando, apagarEventosAlarme, eventosAlarme, notificar, pedirAlarmeExato, pedirPermissao, pedirTelaCheia, permissao, responderAlarme, sincronizarAlarme, telaCheia, testarLembrete } from './src/notificacoes';
-import { aplicarEventos, type Aplicado } from './src/eventos';
-import { horariosLembretes } from './src/agenda';
-import { pararSom, prepararSom, somTocando, tocarSom } from './src/som';
-import { vibrar } from './src/vibrar';
+import * as L from './src/logica/jogo';
+import { carregarTudo, salvarDesp, salvarEstado, salvarMedalhas } from './src/dados/armazenamento';
+import { ALARME_NATIVO, AVISA_FECHADO, agendarLembretes, alarmeExato, alarmeTocando, apagarEventosAlarme, eventosAlarme, notificar, pedirAlarmeExato, pedirPermissao, pedirTelaCheia, permissao, responderAlarme, sincronizarAlarme, telaCheia, testarLembrete } from './src/lembretes/notificacoes';
+import { aplicarEventos, type Aplicado } from './src/logica/eventos';
+import { horariosLembretes } from './src/logica/agenda';
+import { pararSom, prepararSom, somTocando, tocarSom } from './src/lembretes/som';
+import { vibrar } from './src/lembretes/vibrar';
 import { cor } from './src/tema';
-import Planta from './src/components/Planta';
-import { Confete, Gota } from './src/components/Efeitos';
+import Planta from './src/componentes/Planta';
+import { Confete, Gota } from './src/componentes/Efeitos';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 

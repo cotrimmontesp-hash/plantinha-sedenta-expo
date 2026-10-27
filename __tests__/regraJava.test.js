@@ -1,12 +1,12 @@
 // O alarme nativo do Android (modules/plantinha-alarme/.../Regra.java) precisa calcular o próximo toque
-// EXATAMENTE como o app (src/logica.ts) e a agenda de 7 dias (src/agenda.ts). Este teste compila o Java
+// EXATAMENTE como o app (src/logica/jogo.ts) e a agenda de 7 dias (src/logica/agenda.ts). Este teste compila o Java
 // e compara com o JavaScript em milhares de casos. Precisa de um JDK (javac); sem JDK o teste é pulado.
 const { execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const L = require('../src/logica');
-const A = require('../src/agenda');
+const L = require('../src/logica/jogo');
+const A = require('../src/logica/agenda');
 
 function acharJdk() {
   const cands = [process.env.JAVA_HOME, '/home/box/jdk17'].filter(Boolean).map((h) => path.join(h, 'bin'));

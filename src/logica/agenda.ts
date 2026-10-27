@@ -3,7 +3,7 @@
 // Segue a mesma regra do despertador dentro do app (proximoAlarme/marcarToque):
 // cada lembrete conta como um toque, e o próximo vem `intervalo` minutos depois,
 // pulando para o início da janela quando cair fora dela.
-import { marcarToque, proximoAlarme, type Despertador } from './logica';
+import { marcarToque, proximoAlarme, type Despertador } from './jogo';
 
 export const DIAS_AGENDA = 7; // quantos dias para frente
 export const MAX_AGENDA = 60; // teto de avisos agendados de uma vez (Android aceita até 500 alarmes por app)

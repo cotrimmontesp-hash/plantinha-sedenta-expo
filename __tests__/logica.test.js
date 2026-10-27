@@ -1,5 +1,5 @@
-// Portado de /workspace/jogos/agua/testes/teste-logica.js (PWA v5). Mesmas verificações, agora contra src/logica.ts.
-const L=require('../src/logica');
+// Portado de /workspace/jogos/agua/testes/teste-logica.js (PWA v5). Mesmas verificações, agora contra src/logica/jogo.ts.
+const L=require('../src/logica/jogo');
 const checks=[];
 const t=s=>Date.parse(s); let n=0; const ok=(c,msg)=>{n++;checks.push([msg,!!c]);};
 // fuso: 23:59 de SP = 02:59Z do dia seguinte

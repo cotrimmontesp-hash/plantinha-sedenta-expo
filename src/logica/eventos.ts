@@ -1,8 +1,8 @@
 // Eventos que o ALARME NATIVO do Android (modules/plantinha-alarme) grava enquanto o app está fechado:
 // 'toque' (o alarme tocou), 'bebi' (Paulo tocou "Já bebi") e 'soneca' (tocou "Daqui a pouco").
 // Quando o app abre (ou a cada 15 s com ele aberto), estas funções puras aplicam os eventos
-// com a MESMA lógica do app (src/logica.ts): beber() conta o copo na hora em que ele foi tomado.
-import * as L from './logica';
+// com a MESMA lógica do app (src/logica/jogo.ts): beber() conta o copo na hora em que ele foi tomado.
+import * as L from './jogo';
 
 export type TipoEvento = 'toque' | 'bebi' | 'soneca';
 export interface Evento { tipo: TipoEvento; t: number }

@@ -1,6 +1,6 @@
-// Agenda de lembretes com o app fechado (src/agenda.ts). Horários em America/Sao_Paulo (UTC-3).
-const L = require('../src/logica');
-const A = require('../src/agenda');
+// Agenda de lembretes com o app fechado (src/logica/agenda.ts). Horários em America/Sao_Paulo (UTC-3).
+const L = require('../src/logica/jogo');
+const A = require('../src/logica/agenda');
 const sp = (dia, h) => Date.parse(dia + 'T' + h + ':00-03:00');
 const D = '2026-10-26';
 const hh = (l) => l.map(L.hhmm);

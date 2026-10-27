@@ -1,8 +1,8 @@
 // Persistência com AsyncStorage, com as MESMAS chaves e estruturas JSON do PWA (localStorage).
 // Na web o AsyncStorage usa o localStorage do navegador.
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as L from './logica';
-import { carregarComEventos, type Aplicado, type Evento } from './eventos';
+import * as L from '../logica/jogo';
+import { carregarComEventos, type Aplicado, type Evento } from '../logica/eventos';
 
 export const CHAVE = 'plantinhaSedenta.v1';
 export const CHAVE_D = 'plantinhaSedenta.despertador';
