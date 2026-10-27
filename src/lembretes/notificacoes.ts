@@ -1,6 +1,7 @@
 // Web (navegador): avisos com a Notification API, como no PWA. Sem push: só com o app aberto ou recém-fechado.
+import type { Despertador, Evento, Perm } from '../tipos';
+
 const TITULO = 'Plantinha Sedenta 🌱';
-type Perm = 'granted' | 'denied' | 'default' | 'indisponivel';
 
 function temNotif(): boolean { return typeof window !== 'undefined' && 'Notification' in window; }
 
@@ -29,8 +30,8 @@ export async function pedirAlarmeExato(): Promise<boolean> { return true; }
 export async function testarLembrete(_segundos: number): Promise<number | null> { return null; }
 /* Alarme nativo: só no APK Android. Na web nada muda. */
 export const ALARME_NATIVO = false;
-export function sincronizarAlarme(_d: unknown, _ultimoGole: number | null): number | null { return null; }
-export function eventosAlarme(): { tipo: 'toque' | 'bebi' | 'soneca'; t: number }[] { return []; }
+export function sincronizarAlarme(_d: Despertador, _ultimoGole: number | null): number | null { return null; }
+export function eventosAlarme(): Evento[] { return []; }
 export function apagarEventosAlarme(_ate: number): void { /* nada na web */ }
 export function alarmeTocando(): boolean { return false; }
 export function responderAlarme(_bebi: boolean): void { /* nada na web */ }

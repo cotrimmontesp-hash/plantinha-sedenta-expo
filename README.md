@@ -9,7 +9,7 @@ Precisa de **Node 22.13+**.
 ```bash
 npm install
 npx expo start          # abre no celular (development build) ou na web (tecla w)
-npm test                # testes da lógica (Jest, 112; 1 deles compila o Java do alarme e precisa de JDK)
+npm test                # testes da lógica (Jest, 111; 1 deles compila o Java do alarme e precisa de JDK)
 npm run typecheck       # TypeScript
 npm run doctor          # expo-doctor
 npm run export:web      # gera dist/ (é o que a Vercel publica)
@@ -20,22 +20,42 @@ npm run test:web        # teste no Chrome headless a 412 px (precisa de puppetee
 Build Android (APK de teste): `npx eas-cli build -p android --profile preview` (precisa de conta Expo).
 
 ## Estrutura
-- `src/logica.ts` — regras do jogo (sem tela, testável)
-- `App.tsx`, `src/components/` — telas, planta em SVG, efeitos
-- `src/armazenamento.ts` — AsyncStorage (`plantinhaSedenta.v1`, `.despertador`, `.medalhas`)
-- `src/notificacoes*.ts`, `src/som.ts`, `src/vibrar.ts` — despertador
-- `scripts/` — gerar ícones, splash e som
+```
+App.tsx                 só monta a tela (SafeArea + StatusBar + <Jogo />)
+index.ts                registra o app (e o service worker na web)
+src/
+  tipos.ts              TODOS os tipos TypeScript num lugar só
+  tema.ts               cores
+  telas/                Jogo.tsx (a tela) + Jogo.estilos.ts
+  componentes/          Botao, Planta (SVG), Efeitos (gotinha, confete)
+  logica/               regras sem tela, testadas no Jest:
+                        jogo.ts (copos, meta, histórico, despertador, medalhas),
+                        agenda.ts (agenda de 7 dias), eventos.ts (toques no alarme nativo)
+  lembretes/            despertador: notificacoes.ts (web) / notificacoes.native.ts,
+                        alarmeNativo.ts (ponte para o módulo Java), som.ts, vibrar.ts
+  dados/                armazenamento.ts (AsyncStorage)
+modules/plantinha-alarme/   módulo nativo Android (Java/Kotlin) do alarme com o app fechado
+__tests__/              Jest (111), inclusive Java x JS
+testes-web/             teste no Chrome headless (35 itens) e prints
+docs/play-store/        preparação para a Google Play (nada publicado)
+scripts/                gerar ícones, splash e som
+```
+Chaves do AsyncStorage: `plantinhaSedenta.v1`, `.despertador`, `.medalhas` (iguais desde o PWA).
+
+## Google Play
+Nada publicado. O que falta e o passo a passo estão em [docs/play-store/](docs/play-store/README.md): assinatura com chave de upload, revisão das permissões (há riscos reais com `USE_EXACT_ALARM` e o serviço `mediaPlayback`), rascunhos da política de privacidade e da ficha, e a lista do que depende do Paulo.
+AAB: `npx eas-cli build -p android --profile production` (conta Expo) ou Gradle local (`docs/play-store/ASSINATURA.md`).
 
 ## Alarme com o app fechado (Android, v1.1.0)
 Quando o lembrete chega, o celular **toca como despertador**: som em **loop** (volume de alarme) e vibração em loop, a tela acende e a **tela de alarme abre por cima da tela bloqueada**. Só para quando o Paulo toca em **"Já bebi 💧"** (conta o copo e agenda o próximo) ou **"Daqui a pouco"** (toca de novo em 10 min). Os dois botões também ficam na notificação.
 
 Como funciona (módulo nativo local `modules/plantinha-alarme`, entra no APK pelo autolinking do Expo; sem config plugin extra):
-- `Regra.java` é uma cópia fiel das regras do despertador de `src/logica.ts` (janela, intervalo, soneca, último copo). O teste `__tests__/regraJava.test.js` compila o Java e compara com o JS (e com a agenda de 7 dias de `src/agenda.ts`) em 3000 casos.
+- `Regra.java` é uma cópia fiel das regras do despertador de `src/logica/jogo.ts` (janela, intervalo, soneca, último copo). O teste `__tests__/regraJava.test.js` compila o Java e compara com o JS (e com a agenda de 7 dias de `src/logica/agenda.ts`) em 3000 casos.
 - `Agendador.java` agenda **1 alarme exato por vez** (`AlarmManager.setAlarmClock`). Ao tocar, marca o toque e já agenda o seguinte, então a agenda segue sozinha por quantos dias for, com o app fechado. Mesmos horários que a agenda de 7 dias.
 - `AlarmeServico.java`: serviço em primeiro plano (`mediaPlayback`) com `MediaPlayer` em loop (`USAGE_ALARM`, som `assets/alarme.wav`), vibração em loop e wake lock. Notificação de categoria alarme, prioridade máxima, `fullScreenIntent` e 2 ações.
 - `AlarmeActivity.java`: tela nativa com `showWhenLocked` e `turnScreenOn`, 2 botões grandes. Funciona sem abrir o app (não precisa de JavaScript).
 - Reserva: se o Android não deixar o serviço começar, aparece uma notificação **insistente** (`FLAG_INSISTENT`, canal com som de alarme) que repete o som até tocar num botão.
-- "Já bebi" e "Daqui a pouco" com o app fechado ficam gravados no celular como **eventos**. Quando o app abre (ou a cada 15 s com ele aberto), `src/eventos.ts` aplica esses eventos com a lógica do app (`beber()` na hora do toque, `soneca()`), salva no AsyncStorage e confere as medalhas. Um "Já bebi" às 23h50 conta para o dia certo.
+- "Já bebi" e "Daqui a pouco" com o app fechado ficam gravados no celular como **eventos**. Quando o app abre (ou a cada 15 s com ele aberto), `src/logica/eventos.ts` aplica esses eventos com a lógica do app (`beber()` na hora do toque, `soneca()`), salva no AsyncStorage e confere as medalhas. Um "Já bebi" às 23h50 conta para o dia certo.
 - O app manda o despertador e o último copo para o lado nativo sempre que algo muda (`sincronizarAlarme`). Com o app aberto, quem toca também é o alarme nativo (o alarme dentro do app não dispara no Android, para não tocar 2 vezes).
 - Depois de **reiniciar** o celular, **atualizar** o app ou **mudar a hora**, `ReceptorBoot` agenda de novo. Ao abrir a nova versão, o app apaga os lembretes antigos do expo-notifications (APK anterior).
 - Botão **⏱️ Testar lembrete em 1 min**: toca o alarme de teste (não mexe no despertador). No teste, "Já bebi" conta 1 copo de verdade (dá para desfazer) e "Daqui a pouco" toca de novo em 10 min.
@@ -54,7 +74,7 @@ Como funciona (módulo nativo local `modules/plantinha-alarme`, entra no APK pel
 - O alarme toca até responder, sem limite de tempo. Se o Android matar o serviço, ele volta (`START_STICKY`).
 - "Daqui a pouco" perto do fim da janela (ex.: 19h55 com fim às 20h) cai fora do horário e vai para o início da janela do dia seguinte (mesma regra da soneca do app).
 - Se o usuário **forçar parada** do app nas configurações, o Android apaga os alarmes até abrir o app de novo.
-- `USE_EXACT_ALARM` e `USE_FULL_SCREEN_INTENT` são restritas na Google Play a apps de alarme/agenda; para publicar lá, talvez seja preciso ajustar.
+- `USE_EXACT_ALARM` e `USE_FULL_SCREEN_INTENT` são restritas na Google Play a apps de alarme/agenda; para publicar lá, ver `docs/play-store/PERMISSOES.md`.
 - Na **web** continua como antes: sem push, só avisa com a aba aberta (ou recém-fechada).
 
 ## Para o Paulo (no A23)

@@ -102,3 +102,25 @@ Pedido: Paulo pediu (via Coordenador de Apps) que o lembrete toque como alarme d
 - `/workspace/jogos/agua-expo-entrega/plantinha-sedenta-alarme.apk` — 26.339.667 bytes, sha256 `87b9f315df6a8b15f2e8b2f70c53529211e8ac8663ae73cba71e873ba1b656d2`, versionName 1.1.0, versionCode 2, arm64-v8a, minSdk 24, targetSdk 36.
 - Assinatura: mesma chave de debug do APK anterior (certificado SHA-256 `fac61745…033b9c` nos dois, conferido com apksigner), então instala por cima sem desinstalar.
 - **Não testado em aparelho**: tentei de novo o emulador Android 14 x86_64 da box (KVM disponível), mas ele ficou "offline" e parado (CPU ~0%), igual à vez anterior. O teste real é o checklist do README no A23.
+
+## 27/10/2026 — Organização do código + preparação para a Google Play (branch `refactor/organizacao-play-store`, v1.1.0 / versionCode 2)
+Pedido: Paulo (via Coordenador de Apps): (A) código mais organizado e (D) arquitetura pronta para a Play Store, **sem mudar o comportamento**. Nada publicado, nenhuma conta criada, nada de deploy, APK antigo não substituído.
+- Base: `0a19d58` (main). Trabalho local na box (precisa do JDK/SDK e da chave de debug da box para o APK; entrega por bundle + patches, sem push).
+- Commits: (1) `src/` em pastas `logica/`, `lembretes/`, `dados/`, `componentes/` (só move e ajusta imports); (2) `App.tsx` separado em `src/telas/Jogo.tsx` + `Jogo.estilos.ts` + `src/componentes/Botao.tsx` (diff das linhas ordenadas: só imports/exports mudaram); (3) tipos em `src/tipos.ts` (reexportados pelos módulos de antes); (4) código morto removido: `assinatura()` da agenda (só o teste a usava, teste removido junto) e o estilo vazio `palcoMurcho`; (5) `docs/play-store/` + `.gitignore` para chaves; (6) README/REGISTRO.
+- **Nativo não mexido**: `git diff 0a19d58 -- modules plugins app.json eas.json package.json` vazio. `eas.json` já gerava AAB no `production`; `autoIncrement` remoto não ligado (precisa de conta Expo; explicado em ASSINATURA.md).
+- Comentário em `Regra.java` ainda cita `src/logica.ts` (agora `src/logica/jogo.ts`) — não editei para não tocar no nativo.
+
+### Testes (rodados de verdade, na árvore final)
+- `tsc --noEmit --noUnusedLocals`: OK
+- Jest: **111/111** (era 112; saiu só o teste da `assinatura()` removida). `regraJava` (Java × JS) passa.
+- expo-doctor: 17/18 (só o aviso conhecido expo 58.0.19 × 58.0.20; não atualizei).
+- `expo export -p web`: OK; teste web headless: **35/35**.
+- `expo prebuild -p android`: `AndroidManifest.xml` **idêntico** ao de antes da refatoração (`diff` vazio) e os 16 arquivos gradle/properties/xml gerados com o mesmo sha256.
+- APK novo × APK 1.1.0 anterior: manifesto final (`aapt2 dump xmltree`) **idêntico**; mesmo certificado de debug (SHA-256 `fac61745…033b9c`); package, versionName 1.1.0, versionCode 2, minSdk 24, targetSdk 36 iguais.
+- Assinatura com chave de upload testada com chave descartável em `/tmp` (apagada): `-Pandroid.injected.signing.*` e `GRADLE_OPTS` funcionam; `ORG_GRADLE_PROJECT_android.injected...` não.
+
+### Arquivos (em /workspace/jogos/agua-expo-entrega/)
+- `plantinha-sedenta-organizado.apk` — 26.341.139 bytes, sha256 `3a484314a18c3f26bc7fcc1425709245f639a2a82c7bda14061674a446e400ef`, arm64-v8a, chave de debug (instala por cima do 1.1.0).
+- `plantinha-sedenta-organizado-NAO-PUBLICAVEL.aab` — 22.417.085 bytes, sha256 `d23ea662677959d44dde5e617fa099577b902cc65dbc6fa453f65d973182ef58`, assinado com a chave de **debug** (`CN=Android Debug`), só arm64-v8a: **não serve para a Play**, só prova que o build de produção funciona.
+- O APK anterior `plantinha-sedenta-alarme.apk` continua lá, intacto (sha256 `87b9f315…56d2`).
+- **Não testado em aparelho** (o emulador da box não ligou nas 2 tentativas anteriores; não tentei de novo). Checklist do A23 no README.

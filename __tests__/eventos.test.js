@@ -1,6 +1,6 @@
-// Eventos do alarme nativo (src/eventos.ts): "Já bebi" e "Daqui a pouco" tocados com o app fechado.
-const L = require('../src/logica');
-const E = require('../src/eventos');
+// Eventos do alarme nativo (src/logica/eventos.ts): "Já bebi" e "Daqui a pouco" tocados com o app fechado.
+const L = require('../src/logica/jogo');
+const E = require('../src/logica/eventos');
 const sp = (dia, h) => Date.parse(dia + 'T' + h + ':00-03:00');
 const D = '2026-10-26', D2 = '2026-10-27';
 const desp = (o) => Object.assign(L.novoDesp(), { ligado: true, ligadoEm: sp(D, '08:00') }, o);

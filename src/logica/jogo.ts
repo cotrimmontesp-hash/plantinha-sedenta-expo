@@ -3,42 +3,8 @@
  * Datas e horas sempre em America/Sao_Paulo.
  */
 
-export type Dia = string; // 'AAAA-MM-DD'
-
-export interface RegistroDia { copos: number; meta: number; ml: number }
-
-export interface Estado {
-  v: number;
-  dia: Dia;
-  copos: number;
-  meta: number;
-  copoMl: number;
-  sequencia: number;
-  ultimoDiaMeta: Dia | null;
-  seqAntes: number;
-  diaMetaAntes: Dia | null;
-  ultimoGole: number | null;
-  historico: Record<Dia, RegistroDia>;
-}
-
-export interface Despertador {
-  ligado: boolean;
-  intervalo: number; // minutos
-  inicio: string; // 'HH:MM'
-  fim: string; // 'HH:MM'
-  ligadoEm: number | null;
-  ultimoToque: number | null;
-  soneca: number | null;
-}
-
-export type IdMedalha = 'gole' | 'flor' | 'seq3' | 'seq7' | 'perfeita' | 'desp';
-export type Medalhas = Partial<Record<IdMedalha, Dia>>;
-export interface Medalha { id: IdMedalha; em: string; nome: string; como: string }
-
-export interface DiaSemana { dia: Dia; letra: string; reg: RegistroDia | null; hoje: boolean; bateu: boolean }
-export type Semana = DiaSemana[] & { bateu: number; com: number; media: number };
-
-export type Resultado = 'bateu' | 'perdeu' | null;
+import type { Despertador, Dia, DiaSemana, Estado, IdMedalha, Medalha, Medalhas, RegistroDia, Resultado, Semana } from '../tipos';
+export type { Despertador, Dia, DiaSemana, Estado, IdMedalha, Medalha, Medalhas, RegistroDia, Resultado, Semana } from '../tipos';
 
 export const ML_POR_COPO = 250;
 export const COPOS_ML = [200, 250, 300, 500];

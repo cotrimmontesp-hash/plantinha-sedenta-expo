@@ -2,14 +2,13 @@
 // ANDROID (APK): alarme nativo (modules/plantinha-alarme): toca EM LOOP como despertador, abre sobre a
 //   tela bloqueada e só para com "Já bebi" ou "Daqui a pouco". Agenda 1 alarme exato por vez com a mesma
 //   regra do app e reagenda sozinho (depois de tocar, de responder e de reiniciar o celular).
-// iOS / sem o módulo: notificações do expo-notifications com TODOS os lembretes dos próximos dias (src/agenda.ts).
+// iOS / sem o módulo: notificações do expo-notifications com TODOS os lembretes dos próximos dias (src/logica/agenda.ts).
 import { Alert, AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { Nativo } from './alarmeNativo';
-import { lerEventos, type Evento } from './eventos';
-import type { Despertador } from './logica';
+import { lerEventos } from '../logica/eventos';
+import type { Despertador, Evento, Perm } from '../tipos';
 
-type Perm = 'granted' | 'denied' | 'default' | 'indisponivel';
 export const AVISA_FECHADO = true;
 /** Android com o alarme nativo: quem toca é o celular (o alarme dentro do app não dispara, para não tocar 2 vezes). */
 export const ALARME_NATIVO = Platform.OS === 'android' && !!Nativo;

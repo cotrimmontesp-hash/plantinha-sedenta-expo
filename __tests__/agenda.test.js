@@ -1,6 +1,6 @@
-// Agenda de lembretes com o app fechado (src/agenda.ts). Horários em America/Sao_Paulo (UTC-3).
-const L = require('../src/logica');
-const A = require('../src/agenda');
+// Agenda de lembretes com o app fechado (src/logica/agenda.ts). Horários em America/Sao_Paulo (UTC-3).
+const L = require('../src/logica/jogo');
+const A = require('../src/logica/agenda');
 const sp = (dia, h) => Date.parse(dia + 'T' + h + ':00-03:00');
 const D = '2026-10-26';
 const hh = (l) => l.map(L.hhmm);
@@ -81,10 +81,5 @@ describe('agenda de lembretes (app fechado)', () => {
     const d = desp({ ligadoEm: sp(D, '21:00'), inicio: '22:00', fim: '02:00', intervalo: 60 });
     const l = A.horariosLembretes(d, null, sp(D, '21:00'), 1);
     expect(hh(l)).toEqual(['22:00', '23:00', '00:00', '01:00', '02:00']);
-  });
-
-  test('assinatura muda quando a lista muda', () => {
-    expect(A.assinatura([1, 2])).not.toBe(A.assinatura([1, 3]));
-    expect(A.assinatura([])).toBe('0:0:0');
   });
 });
