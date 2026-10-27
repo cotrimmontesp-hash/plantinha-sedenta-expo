@@ -1,5 +1,5 @@
 // Som do despertador: a melodia do PWA (assets/alarme.wav, gerado por scripts/gerar-som.py),
-// tocada a cada 2 s por ~10 s, com vibração. Qualquer botão para o som (ver Botao em App.tsx).
+// tocada a cada 2 s por ~10 s, com vibração. Qualquer botão para o som (ver src/componentes/Botao.tsx).
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 import { vibrar } from './vibrar';
 
