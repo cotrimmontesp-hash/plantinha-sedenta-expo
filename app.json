@@ -27,7 +27,11 @@
         "backgroundColor": "#0b1d2a"
       },
       "permissions": [
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.USE_EXACT_ALARM",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
       ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
@@ -70,7 +74,10 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#4fc3ff",
-          "enableRemoteNotifications": false
+          "enableRemoteNotifications": false,
+          "sounds": [
+            "./assets/alarme.wav"
+          ]
         }
       ],
       "expo-asset"

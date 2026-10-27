@@ -22,7 +22,11 @@ export function notificar(texto: string, alarme?: boolean): void {
   } else direto();
 }
 /** Na web não dá para agendar aviso com o app fechado (sem push). */
-export function agendarLembrete(_quando: number | null): void { /* nada na web */ }
+export const AVISA_FECHADO = false;
+export function agendarLembretes(_lista: number[]): void { /* nada na web */ }
+export async function alarmeExato(): Promise<boolean> { return true; }
+export async function pedirAlarmeExato(): Promise<boolean> { return true; }
+export async function testarLembrete(_segundos: number): Promise<number | null> { return null; }
 export function registrarServiceWorker(): void {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator) || __DEV__) return;
   window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {}); });

@@ -6,7 +6,8 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import * as L from './src/logica';
 import { carregarTudo, salvarDesp, salvarEstado, salvarMedalhas } from './src/armazenamento';
-import { agendarLembrete, notificar, pedirPermissao, permissao } from './src/notificacoes';
+import { AVISA_FECHADO, agendarLembretes, alarmeExato, notificar, pedirAlarmeExato, pedirPermissao, permissao, testarLembrete } from './src/notificacoes';
+import { horariosLembretes } from './src/agenda';
 import { pararSom, prepararSom, somTocando, tocarSom } from './src/som';
 import { vibrar } from './src/vibrar';
 import { cor } from './src/tema';
@@ -60,6 +61,8 @@ function Jogo() {
   const [metaTemp, setMetaTemp] = useState(8);
   const [copoTemp, setCopoTemp] = useState(250);
   const [perm, setPerm] = useState<string>('default');
+  const [exato, setExato] = useState(true);
+  const [reabriu, setReabriu] = useState(0);
   const [gotas, setGotas] = useState<number[]>([]);
   const [festa, setFesta] = useState(0);
   const { width, height } = useWindowDimensions();
@@ -121,7 +124,7 @@ function Jogo() {
       setPronto(true);
       SplashScreen.hideAsync().catch(() => {});
       conferirMedalhas(true); // dados antigos: concede as que já valem (sem vibrar)
-      permissao().then(setPerm);
+      permissao().then(setPerm); alarmeExato().then(setExato);
     });
     return () => { vivo = false; };
   }, [conferirMedalhas, msgF]);
@@ -130,14 +133,18 @@ function Jogo() {
   useEffect(() => {
     if (!pronto) return;
     const a = setInterval(verificar, 30000), b = setInterval(conferirAlarme, 15000);
-    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') { verificar(); conferirAlarme(); } });
+    const sub = AppState.addEventListener('change', (s) => { if (s === 'active') { verificar(); conferirAlarme(); permissao().then(setPerm); alarmeExato().then(setExato); setReabriu((n) => n + 1); } });
     conferirAlarme();
     return () => { clearInterval(a); clearInterval(b); sub.remove(); };
   }, [pronto, verificar, conferirAlarme]);
 
   const e = est.current, d = desp.current;
   const prox = L.proximoAlarme(d, e.ultimoGole, Date.now());
-  useEffect(() => { if (pronto) agendarLembrete(prox); }, [pronto, prox]);
+  // app fechado: agenda no celular TODOS os lembretes dos próximos dias; refaz ao abrir, beber, tocar e mudar a config
+  const chaveAgenda = [d.ligado, d.intervalo, d.inicio, d.fim, d.soneca, d.ultimoToque, d.ligadoEm, e.ultimoGole, perm, exato, reabriu].join('|');
+  useEffect(() => {
+    if (pronto) agendarLembretes(horariosLembretes(desp.current, est.current.ultimoGole, Date.now()));
+  }, [pronto, chaveAgenda]);
 
   // ganchos para os testes no navegador (só web)
   useEffect(() => {
@@ -177,13 +184,25 @@ function Jogo() {
   };
   const ligarDesp = () => {
     d.ligado = !d.ligado; d.soneca = null;
-    if (d.ligado) { d.ligadoEm = Date.now(); prepararSom(); if (perm === 'default') pedirPermissao().then(setPerm); }
+    if (d.ligado) {
+      d.ligadoEm = Date.now(); prepararSom();
+      (perm === 'default' ? pedirPermissao() : Promise.resolve(perm)).then((p) => {
+        setPerm(p);
+        if (p === 'granted' && AVISA_FECHADO) pedirAlarmeExato().then(setExato);
+      });
+    }
     salvarDesp(d); render();
   };
   const mudarDesp = (k: 'intervalo' | 'inicio' | 'fim', v: number | string) => { (d as unknown as Record<string, unknown>)[k] = v; salvarDesp(d); render(); };
   const soneca = () => {
     const t = L.soneca(d, Date.now()); salvarDesp(d); mostrarAlarme(false);
     msgF('😴 Soneca: toco de novo às ' + L.hhmm(t) + '.'); render();
+  };
+  const testarFechado = () => {
+    testarLembrete(60).then((t) => {
+      permissao().then(setPerm);
+      msgF(t === null ? '🔕 Não deu para agendar: permita as notificações do app nas configurações do celular.' : '🧪 Teste agendado para ' + L.hhmm(t) + '. Feche o app e apague a tela agora.', t === null);
+    });
   };
   const txtNotif = perm === 'granted' ? '🔔 Lembretes ativados ✅' : perm === 'denied' ? '🔕 Lembretes bloqueados' + (Platform.OS === 'web' ? ' no navegador' : ' no celular') : perm === 'indisponivel' ? '🔔 Lembretes do celular indisponíveis aqui' : '🔔 Ativar lembretes do celular';
   const proxTxt = prox === null ? 'Despertador desligado.' : 'Próximo lembrete às ' + L.hhmm(prox) + (L.diaDe(prox) !== L.diaDe(Date.now()) ? ' (amanhã)' : '') + (d.soneca ? ' 😴' : '');
@@ -274,7 +293,9 @@ function Jogo() {
             ))}
             <Text testID="dProx" style={st.prox} accessibilityLiveRegion="polite">{proxTxt}</Text>
             <Botao testID="dTeste" onPress={() => { prepararSom(); dispararAlarme(true); }} style={[st.sec, st.cheio]} textStyle={st.secTx}>🔊 Testar despertador</Botao>
-            <Text style={st.aviso}>{Platform.OS === 'web' ? 'Mantenha o app aberto; ele toca enquanto estiver aberto ou recém-fechado.' : 'Com o app aberto, toca o alarme. Com o app fechado, chega um aviso do celular (se os lembretes estiverem ativados).'}</Text>
+            {AVISA_FECHADO && <Botao testID="dTesteFechado" onPress={testarFechado} style={[st.sec, st.cheio]} textStyle={st.secTx}>⏱️ Testar lembrete em 1 min</Botao>}
+            {AVISA_FECHADO && d.ligado && !exato && <Botao testID="dExato" onPress={() => pedirAlarmeExato().then(setExato)} style={[st.sec, st.cheio]} textStyle={st.secTx}>⚠️ Permitir alarmes na hora certa</Botao>}
+            <Text style={st.aviso}>{Platform.OS === 'web' ? 'Mantenha o app aberto; ele toca enquanto estiver aberto ou recém-fechado.' : 'Com o app aberto, toca o alarme. Com o app fechado ou a tela apagada, o celular toca o lembrete (precisa das notificações ativadas). Celular desligado não toca.'}</Text>
           </View>
           <Text style={st.aviso}>A meta é só uma referência ajustável, não é orientação médica. Na dúvida, converse com seu médico.</Text>
         </View>
