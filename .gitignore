@@ -13,6 +13,12 @@ expo-env.d.ts
 .kotlin/
 *.orig.*
 *.jks
+*.keystore
+keystore.properties
+# credenciais do EAS (gerado por `eas credentials`)
+credentials.json
+# conta de serviço da Play (se um dia usar eas submit)
+*service-account*.json
 *.p8
 *.p12
 *.key
