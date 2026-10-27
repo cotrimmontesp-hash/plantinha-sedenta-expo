@@ -33,8 +33,3 @@ export function horariosLembretes(
   }
   return lista;
 }
-
-/** Assinatura curta da lista (para não reagendar à toa). */
-export function assinatura(lista: number[]): string {
-  return lista.length + ':' + (lista[0] || 0) + ':' + (lista[lista.length - 1] || 0);
-}

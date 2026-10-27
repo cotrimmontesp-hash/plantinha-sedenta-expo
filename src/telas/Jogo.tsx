@@ -240,7 +240,7 @@ export default function Jogo() {
             <View testID="barra" style={[st.barraIn, { width: (Math.min(100, (e.copos / e.meta) * 100) + '%') as `${number}%` }]} />
           </View>
 
-          <View style={[st.palco, murcha && s > 0 && st.palcoMurcho]}>
+          <View style={st.palco}>
             <View style={{ width: larguraPlanta, alignSelf: 'center' }}>
               <Planta estagio={s} murcha={murcha} largura={larguraPlanta} />
               {gotas.map((g) => <Gota key={g} largura={larguraPlanta} onFim={() => setGotas((x) => x.filter((y) => y !== g))} />)}

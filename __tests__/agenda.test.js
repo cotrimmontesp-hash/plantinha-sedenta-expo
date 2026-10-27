@@ -82,9 +82,4 @@ describe('agenda de lembretes (app fechado)', () => {
     const l = A.horariosLembretes(d, null, sp(D, '21:00'), 1);
     expect(hh(l)).toEqual(['22:00', '23:00', '00:00', '01:00', '02:00']);
   });
-
-  test('assinatura muda quando a lista muda', () => {
-    expect(A.assinatura([1, 2])).not.toBe(A.assinatura([1, 3]));
-    expect(A.assinatura([])).toBe('0:0:0');
-  });
 });

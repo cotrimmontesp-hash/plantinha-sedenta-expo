@@ -15,7 +15,6 @@ export const st = StyleSheet.create({
   barra: { height: 22, backgroundColor: cor.escuro, borderRadius: 12, overflow: 'hidden', borderWidth: 2, borderColor: cor.borda },
   barraIn: { height: '100%', backgroundColor: cor.agua },
   palco: { backgroundColor: '#14344b', borderRadius: 20, borderWidth: 2, borderColor: cor.borda, overflow: 'hidden', position: 'relative' },
-  palcoMurcho: {},
   msg: { fontSize: 21, color: cor.texto, textAlign: 'center', minHeight: 56, fontWeight: '600' },
   msgAlerta: { backgroundColor: cor.alertaFundo, borderWidth: 2, borderColor: cor.botao, borderRadius: 14, padding: 10 },
   beber: { backgroundColor: cor.botao, borderRadius: 18, paddingVertical: 22, paddingHorizontal: 10, minHeight: 92, justifyContent: 'center', borderBottomWidth: 6, borderBottomColor: cor.botaoSombra },
