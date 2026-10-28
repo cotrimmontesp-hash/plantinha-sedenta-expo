@@ -63,7 +63,7 @@ Se esta política mudar, a nova versão será publicada em [URL DESTA POLÍTICA]
 | Sem conta/login | Não há tela, biblioteca ou código de login. |
 | Backup do Android | `android:allowBackup="true"` no manifesto final (padrão do Expo). |
 | Permissões | Manifesto final do APK (`aapt2 dump xmltree`); `blockedPermissions` em `app.json`. |
-| Aviso de saúde | Já existe no app: "A meta é só uma referência ajustável, não é orientação médica. Na dúvida, converse com seu médico." (`src/telas/Jogo.tsx`). |
+| Aviso de saúde | Já existe no app: "A meta é só uma referência ajustável, não é orientação médica. Na dúvida, converse com seu médico." (`src/telas/Ajustes.tsx`). |
 
 **Para o formulário "Segurança dos dados" da Play:** pelo código conferido, a resposta coerente é "o app não coleta nem compartilha dados do usuário" (dados que ficam só no aparelho não contam como coletados, segundo a Play [F7]). O Paulo confirma ao preencher.
 **Não conferido:** quais registros de acesso a hospedagem da web (Vercel) guarda — depende do provedor.
