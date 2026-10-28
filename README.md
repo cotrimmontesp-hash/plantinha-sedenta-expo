@@ -102,5 +102,16 @@ Como funciona (módulo nativo local `modules/plantinha-alarme`, entra no APK pel
 5. **Reinicie** o celular, não abra o app, e espere o próximo lembrete: deve tocar.
 6. Desligue o despertador e espere o horário: **não** deve tocar.
 
+### Teste das abas no A23 (v1.2.0)
+1. Baixe `plantinha-sedenta-abas.apk` e toque em **Atualizar** (instala por cima; **não** desinstale).
+2. Abra: em **💧 Hoje**, os copos de hoje e a sequência são os de antes. Em **📊 Histórico**, os dias anteriores estão lá. Em **🏅 Conquistas**, as medalhas ganhas continuam.
+3. Toque nas 4 abas embaixo: cada uma abre e a barra não fica escondida atrás dos botões do Android.
+4. Em **Hoje**, toque em **Bebi um copo**: o número sobe. Veja que o **Histórico** (barra de hoje) e as **Conquistas** mudaram junto. Toque em **Desfazer** para voltar.
+5. Em **⚙️ Ajustes**, mude a meta (✏️ Mudar copo e meta > Salvar) e o despertador (intervalo, Das/Até). Volte para **Hoje**: a meta e o "Próximo lembrete" mudaram.
+6. Em **Ajustes**, toque em **⏱️ Testar lembrete em 1 min**, saia do app e **apague a tela**: em 1 min ela acende e toca sem parar.
+7. Toque em **Já bebi 💧** na tela do alarme: o som para.
+8. Abra o app de novo: em **Hoje** tem 1 copo a mais (o do teste; dá para desfazer).
+9. Se aparecer um botão **⚠️** (em Hoje ou em Ajustes), toque nele e permita o que o celular pedir.
+
 ## Limite (web)
 **Sem push.** Na web o despertador só funciona com a aba aberta (ou fechada há pouco).

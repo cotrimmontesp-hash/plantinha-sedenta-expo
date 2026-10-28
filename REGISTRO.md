@@ -124,3 +124,27 @@ Pedido: Paulo (via Coordenador de Apps): (A) código mais organizado e (D) arqui
 - `plantinha-sedenta-organizado-NAO-PUBLICAVEL.aab` — 22.417.085 bytes, sha256 `d23ea662677959d44dde5e617fa099577b902cc65dbc6fa453f65d973182ef58`, assinado com a chave de **debug** (`CN=Android Debug`), só arm64-v8a: **não serve para a Play**, só prova que o build de produção funciona.
 - O APK anterior `plantinha-sedenta-alarme.apk` continua lá, intacto (sha256 `87b9f315…56d2`).
 - **Não testado em aparelho** (o emulador da box não ligou nas 2 tentativas anteriores; não tentei de novo). Checklist do A23 no README.
+
+## 27/10/2026 — Navegação por 4 abas (proposta B aprovada pelo Paulo) — branch `feature/navegacao-abas`, v1.2.0 / versionCode 3
+Pedido: Paulo (via Coordenador de Apps) aprovou a proposta B: 4 abas fixas embaixo (💧 Hoje, 📊 Histórico, 🏅 Conquistas, ⚙️ Ajustes), dividindo `src/telas/Jogo.tsx`. **Sem mudar** comportamento, lógica, dados, alarme nativo, permissões ou `eas.json`. Nada publicado, sem deploy na Vercel.
+- Base: `7499f28` (main do GitHub, já com o PR 4). Trabalho local na box (JDK/SDK + chave de debug da box para o APK); entrega por bundle + patches, sem push.
+- **Escolha da navegação: barra de abas própria** (`src/navegacao/BarraAbas.tsx`, estado `useState` em `Navegacao.tsx`), sem React Navigation/Expo Router.
+  Motivo: 4 abas fixas sem histórico/links não precisam de biblioteca; zero dependência nova = nada muda no `package.json`, no prebuild, no APK e no export web (manifesto igual, expo-doctor igual).
+- Estado ÚNICO em `src/estado/usePlantinha.ts` (1 hook chamado só em `Navegacao.tsx`; as telas recebem `p` por prop). O código veio de `Jogo.tsx`: conferido por script que todas as linhas de estado/efeitos/ações (linhas 18–226) estão idênticas no código novo; as 7 que mudaram são só de tela (tamanho da planta/placar, nome do componente, `semana`/`nGanhas` movidos para as abas).
+- Janelas (meta, tela do alarme, aviso de medalha) ficam na raiz: aparecem em qualquer aba. A frase do momento aparece em Hoje e em Ajustes. Os botões ⚠️ de permissão ficam em Ajustes > Despertador (como antes) e, se faltar permissão, Hoje mostra um ⚠️ que leva a Ajustes.
+- Safe area: `SafeAreaView` só em cima/lados; a barra de abas soma o `inset` de baixo (fica acima da barra de navegação do Android). Botões das abas com 66 px de altura.
+- Cores: telas no tema escuro de sempre; barra de abas nas cores da proposta B (fundo claro, aba ativa verde com borda verde em cima). Nomes e emoji das abas iguais à proposta. O app sempre abre em Hoje.
+- Hoje: planta um pouco menor (30% da altura em vez de 42%) para a aba caber sem rolar em 390×844; progresso "1250 ml / 2000 ml" + "5/8 copos hoje" no lugar das 3 caixinhas.
+- **Não mexido** (conferido com `git diff 7499f28 --stat -- src/logica src/dados src/lembretes modules plugins eas.json package.json package-lock.json`: vazio; não existe pasta `plugins/`). `app.json`: só `version` 1.2.0 e `versionCode` 3.
+
+### Testes (rodados de verdade, na árvore final)
+- `tsc --noEmit --noUnusedLocals`: OK
+- Jest: **115/115** (111 de antes + 4 novos de `src/navegacao/abas.ts`). Sem infraestrutura de teste de renderização no projeto; não adicionei.
+- expo-doctor: 17/18 (só o aviso conhecido expo 58.0.19 × 58.0.20; não atualizei).
+- `expo export -p web`: OK. Teste web headless (412 px): **42/42** = os 35 de antes + 7 novos das abas. Adaptação: cada verificação antiga é a mesma, só troca de aba antes de ler o texto (`hResumo` no Histórico, `mResumo` em Conquistas, `config`/`dLiga`/`dProx`/`msg` dos ajustes em Ajustes, `copos`/`ml`/`seq` em Hoje), porque só a aba aberta fica na tela. Novos: 4 abas aparecem; barra fixa embaixo com botões ≥ 56 px e abre em Hoje; "Bebi um copo" visível sem rolar; trocar de aba mantém o estado; Ajustes mostra a meta salva; Hoje mostra o próximo lembrete; recarregar mantém o histórico.
+- Prebuild: `AndroidManifest.xml` gerado **idêntico** ao da main; `build.gradle` muda só `versionCode 3` / `versionName "1.2.0"`. Manifesto final do APK (aapt2) × `plantinha-sedenta-organizado.apk`: só `versionCode`/`versionName` mudam.
+
+### APK
+- `/workspace/jogos/agua-expo-entrega/plantinha-sedenta-abas.apk` — 26.351.355 bytes, sha256 `a3f410bea40cc01ac482b77f22f833e89d8967214436b220e7c65bc7bb6beefc`, package `br.com.minanoideias.plantinhasedenta`, 1.2.0 / versionCode 3, arm64-v8a, mesma chave de debug (certificado SHA-256 `fac61745…033b9c`, igual ao `plantinha-sedenta-organizado.apk`): instala por cima sem perder dados.
+- **Não testado em aparelho** (o emulador da box travou nas 2 vezes anteriores; não tentei de novo). Checklist do A23 no README ("Teste das abas no A23").
+- Prints da web a 390×844 com **dados simulados**: `/workspace/jogos/agua-expo-entrega/prints-abas/` (gerados por `testes-web/prints-abas.cjs`).
