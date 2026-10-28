@@ -1,6 +1,7 @@
 // Aba Ajustes: meta (tamanho do copo e quantidade) e despertador (intervalo, início/fim, soneca 10 min, testes e permissões).
 import { Platform, Text, View } from 'react-native';
 import * as L from '../logica/jogo';
+import { rotuloPermissoes } from '../logica/permissoes';
 import { ALARME_NATIVO, AVISA_FECHADO } from '../lembretes/notificacoes';
 import type { Plantinha } from '../estado/usePlantinha';
 import Botao from '../componentes/Botao';
@@ -36,8 +37,7 @@ export default function Ajustes({ p }: { p: Plantinha }) {
         <Botao testID="dLiga" onPress={p.ligarDesp} pressed={d.ligado} style={[st.sec, st.cheio, d.ligado && { backgroundColor: cor.verde, borderColor: cor.verde }]} textStyle={[st.secTx, d.ligado && { color: '#111', fontWeight: '800' }]}>
           {d.ligado ? '🔔 Ligado (tocar para desligar)' : '🔕 Desligado (tocar para ligar)'}
         </Botao>
-        {AVISA_FECHADO && d.ligado && !p.exato && <Botao testID="dExato" onPress={p.permitirExato} style={[st.sec, st.cheio, st.alertaBotao]} textStyle={st.secTx}>⚠️ Permitir alarmes na hora certa</Botao>}
-        {ALARME_NATIVO && d.ligado && !p.telaOk && <Botao testID="dTela" onPress={p.permitirTelaCheia} style={[st.sec, st.cheio, st.alertaBotao]} textStyle={st.secTx}>⚠️ Permitir alarme em tela cheia</Botao>}
+        {p.faltamPerm.length > 0 && <Botao testID="dPermissoes" onPress={p.permitirAlarmes} style={[st.sec, st.cheio, st.alertaBotao]} textStyle={st.secTx}>{rotuloPermissoes(p.faltamPerm)}</Botao>}
         <Text style={st.rotulo}>A cada:</Text>
         <View style={st.grade}>
           {L.INTERVALOS.map((i) => (

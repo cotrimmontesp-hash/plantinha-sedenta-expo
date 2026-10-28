@@ -6,6 +6,7 @@ import { AppState, Platform } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import * as L from '../logica/jogo';
 import { carregarTudo, salvarDesp, salvarEstado, salvarMedalhas } from '../dados/armazenamento';
+import { permissoesFaltando, pedirEmSequencia } from '../logica/permissoes';
 import { ALARME_NATIVO, AVISA_FECHADO, agendarLembretes, alarmeExato, alarmeTocando, apagarEventosAlarme, eventosAlarme, notificar, pedirAlarmeExato, pedirPermissao, pedirTelaCheia, permissao, responderAlarme, sincronizarAlarme, telaCheia, testarLembrete } from '../lembretes/notificacoes';
 import { aplicarEventos, type Aplicado } from '../logica/eventos';
 import { horariosLembretes } from '../logica/agenda';
@@ -202,8 +203,11 @@ export function usePlantinha() {
       msgF(t === null ? '🔕 Não deu para agendar: permita as notificações do app nas configurações do celular.' : (ALARME_NATIVO ? '🧪 Teste às ' + L.hhmm(t) + '. Apague a tela agora: vai tocar até você tocar em Já bebi ou Daqui a pouco.' : '🧪 Teste agendado para ' + L.hhmm(t) + '. Feche o app e apague a tela agora.'), t === null);
     });
   };
-  const permitirExato = () => { pedirAlarmeExato().then(setExato); };
-  const permitirTelaCheia = () => { pedirTelaCheia().then(setTelaOk); };
+  /** Botão único ⚠️ de Ajustes: pede as permissões do alarme que faltam, uma depois da outra. */
+  const faltamPerm = permissoesFaltando({ avisaFechado: AVISA_FECHADO, alarmeNativo: ALARME_NATIVO, ligado: d.ligado, exato, telaOk });
+  const permitirAlarmes = () => {
+    pedirEmSequencia(faltamPerm, { exato: pedirAlarmeExato, telaCheia: pedirTelaCheia }, (q, ok) => (q === 'exato' ? setExato(ok) : setTelaOk(ok)));
+  };
   const permitirNotificacoes = () => { pedirPermissao().then(setPerm); };
 
   return {
@@ -212,7 +216,7 @@ export function usePlantinha() {
     dlg, fecharDlg: () => setDlg(false), metaTemp, setMetaTemp, copoTemp, setCopoTemp,
     perm, exato, telaOk, gotas, tirarGota: (g: number) => setGotas((x) => x.filter((y) => y !== g)), festa, fimFesta: () => setFesta(0),
     beber, desfazer, abrirMeta, salvarMeta, ligarDesp, mudarDesp, soneca, bebiNoAlarme, testarDespertador, testarFechado,
-    permitirExato, permitirTelaCheia, permitirNotificacoes,
+    faltamPerm, permitirAlarmes, permitirNotificacoes,
   };
 }
 
