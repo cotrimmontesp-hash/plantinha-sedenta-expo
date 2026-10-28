@@ -2,6 +2,8 @@
 // Uso: npx expo export -p web && NODE_PATH=<pasta com puppeteer-core> node testes-web/teste-web.cjs
 // Dados SIMULADOS: o histórico da semana e a "sede" são injetados no armazenamento só para o teste.
 // v1.2.0 (abas): cada item procura o texto na aba onde ele mora agora (aba(...) troca de aba antes); itens [abas] são novos.
+// Sem rolagem: toque/print não rolam mais a página (não há rolagem); itens [sem rolagem] conferem cada aba a 412x915
+// (o teste completo em vários tamanhos é testes-web/sem-rolagem.cjs).
 const { spawn } = require('child_process');
 const path = require('path');
 const puppeteer = require('puppeteer-core');
@@ -22,8 +24,8 @@ const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
     pg.on('console', (m) => { if (m.type() === 'error') erros.push('console: ' + m.text()); });
     const E = (f, ...a) => pg.evaluate(f, ...a);
     const T = (id) => E((i) => { const el = document.querySelector(`[data-testid="${i}"]`); return el ? el.textContent : null; }, id);
-    const toque = async (id) => { const s = `[data-testid="${id}"]`; await pg.waitForSelector(s, { visible: true }); await pg.$eval(s, (e) => e.scrollIntoView({ block: 'center' })); await dorme(100); try { await pg.click(s); } catch { await dorme(500); await pg.click(s); } await dorme(150); }; // 2ª tentativa: fade do Modal
-    const shot = async (nome, topo = true) => { if (topo) await E(() => document.querySelector('[role=heading]').scrollIntoView({ block: 'start' })); await dorme(400); await pg.screenshot({ path: path.join(SHOTS, nome) }); };
+    const toque = async (id) => { const s = `[data-testid="${id}"]`; await pg.waitForSelector(s, { visible: true }); await dorme(100); try { await pg.click(s); } catch { await dorme(500); await pg.click(s); } await dorme(150); }; // 2ª tentativa: fade do Modal
+    const shot = async (nome) => { await dorme(400); await pg.screenshot({ path: path.join(SHOTS, nome) }); };
     const aba = async (id) => { await pg.click(`[data-testid="aba-${id}"]`); await pg.waitForSelector(`[data-testid="aba-${id}"][aria-selected="true"]`); await dorme(150); };
     const tela = async (nome) => { await dorme(300); await pg.screenshot({ path: path.join(SHOTS, nome), fullPage: false }); };
 
@@ -38,6 +40,8 @@ const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
     await aba('historico'); const hR0 = await T('hResumo'); await aba('conquistas'); const mR0 = await T('mResumo'); await aba('hoje');
     check(hR0 === 'Ainda sem histórico' && mR0 === '0 de 6 medalhas', 'sem histórico e 0 de 6 medalhas');
     check(await E(() => document.documentElement.scrollWidth <= 412), 'sem rolagem lateral em 412 px');
+    const semRolar = () => E(() => document.scrollingElement.scrollHeight <= innerHeight && ![...document.querySelectorAll('body *')].some((el) => /(auto|scroll)/.test(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1));
+    for (const [id, nome] of [['historico', 'Histórico'], ['conquistas', 'Conquistas'], ['ajustes', 'Ajustes'], ['hoje', 'Hoje']]) { await aba(id); check(await semRolar(), `[sem rolagem] aba ${nome} não rola em 412x915`); }
     check(await E(() => { const b = document.querySelector('[data-testid="beber"]').getBoundingClientRect(); return b.height >= 88; }), 'botão "Bebi um copo" grande (>= 88 px)');
     check(await E(() => !!document.querySelector('link[rel=manifest]') && document.documentElement.lang === 'pt-BR'), 'manifest ligado e idioma pt-BR');
     await shot('01-inicio.png');

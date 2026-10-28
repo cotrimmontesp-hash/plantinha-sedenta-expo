@@ -1,10 +1,11 @@
-// Prints das 4 abas na web (dist/) em tela de celular 390x844, com DADOS SIMULADOS no armazenamento
+// Prints das 4 abas (e das janelas meta e alarme) na web (dist/), tela de celular 390x844 ou a do 2º argumento (ex. 412x915), com DADOS SIMULADOS no armazenamento
 // (5 copos hoje, 6 dias de histórico, sequência 4, despertador ligado) e uma etiqueta "dados simulados" no canto.
-// Uso: npx expo export -p web && NODE_PATH=<pasta com puppeteer-core> node testes-web/prints-abas.cjs <pasta de saída>
+// Uso: npx expo export -p web && NODE_PATH=<pasta com puppeteer-core> node testes-web/prints-abas.cjs <pasta de saída> [LxA]
 const { spawn } = require('child_process');
 const path = require('path');
 const puppeteer = require('puppeteer-core');
 const PORTA = 4197, SAIDA = path.resolve(process.argv[2] || path.join(__dirname, 'telas'));
+const [LARG, ALT] = (process.argv[3] || '390x844').split('x').map(Number);
 require('fs').mkdirSync(SAIDA, { recursive: true });
 const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
 (async () => {
@@ -13,7 +14,7 @@ const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
   const nav = await puppeteer.launch({ executablePath: '/usr/bin/google-chrome', headless: 'new', args: ['--no-sandbox'] });
   try {
     const pg = await nav.newPage();
-    await pg.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    await pg.setViewport({ width: LARG, height: ALT, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
     await pg.goto(`http://localhost:${PORTA}/`, { waitUntil: 'networkidle0' });
     await pg.evaluate(() => localStorage.clear()); await pg.reload({ waitUntil: 'networkidle0' });
     await pg.waitForSelector('[data-testid="beber"]');
@@ -37,8 +38,9 @@ const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
       await pg.screenshot({ path: path.join(SAIDA, `${nome}-SIMULADO.png`) });
       console.log('print', path.join(SAIDA, `${nome}-SIMULADO.png`));
     }
-    await pg.click('[data-testid="aba-ajustes"]'); await pg.evaluate(() => window.scrollTo(0, 0));
-    await pg.$eval('[data-testid="dLiga"]', (e) => e.scrollIntoView({ block: 'start' })); await dorme(400);
-    await pg.screenshot({ path: path.join(SAIDA, '4b-ajustes-despertador-SIMULADO.png') }); console.log('print', path.join(SAIDA, '4b-ajustes-despertador-SIMULADO.png'));
+    // janelas (sem rolagem não há mais "metade de baixo" de Ajustes para fotografar)
+    const foto = async (nome) => { await dorme(700); await etiqueta(); await pg.screenshot({ path: path.join(SAIDA, nome) }); console.log('print', path.join(SAIDA, nome)); };
+    await pg.click('[data-testid="config"]'); await foto('5-janela-meta-SIMULADO.png'); await pg.click('[data-testid="salvar"]'); await dorme(600);
+    await pg.click('[data-testid="dTeste"]'); await foto('6-janela-alarme-SIMULADO.png'); await pg.click('[data-testid="alSoneca"]');
   } finally { await nav.close(); srv.kill(); }
 })();
