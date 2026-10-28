@@ -50,7 +50,7 @@ scripts/                gerar ícones, splash e som
 Chaves do AsyncStorage: `plantinhaSedenta.v1`, `.despertador`, `.medalhas` (iguais desde o PWA).
 
 ## Abas (v1.2.0)
-4 abas fixas embaixo (proposta B): **💧 Hoje** (planta, ml de hoje / meta, "Bebi um copo", "Desfazer", próximo lembrete, sequência), **📊 Histórico** (últimos 7 dias + média), **🏅 Conquistas** (6 medalhas), **⚙️ Ajustes** (copo e meta, despertador, soneca 10 min, testes e botões ⚠️ de permissão). Se faltar permissão do alarme, a aba Hoje mostra um botão ⚠️ que leva para Ajustes. O app sempre abre em Hoje.
+4 abas fixas embaixo (proposta B): **💧 Hoje** (planta, ml de hoje / meta, "Bebi um copo", "Desfazer", próximo lembrete, sequência), **📊 Histórico** (últimos 7 dias + média), **🏅 Conquistas** (6 medalhas), **⚙️ Ajustes** (copo e meta, despertador, soneca 10 min, testes e um botão ⚠️ de permissões). Se faltar permissão do alarme, a aba Hoje mostra um botão ⚠️ que leva para Ajustes. O app sempre abre em Hoje.
 
 ## Sem rolagem
 Nenhuma tela rola (abas, janelas meta/alarme, aviso de medalha): não há `ScrollView`. A planta da aba Hoje e o gráfico do Histórico ocupam o espaço que sobra; se o conteúdo não couber (tela pequena ou fonte do sistema grande), `src/componentes/Encaixe.tsx` reduz a tela inteira proporcionalmente, sem esconder nada. Conferido por `testes-web/sem-rolagem.cjs`.
@@ -86,8 +86,9 @@ Como funciona (módulo nativo local `modules/plantinha-alarme`, entra no APK pel
 
 ## Limites reais
 - **Celular desligado não toca** (nada toca). Ligado, com tela apagada ou bloqueada e app fechado, toca.
-- **Android 14+**: a tela cheia precisa da permissão "Notificações em tela cheia". O app mostra **⚠️ Permitir alarme em tela cheia** se ela estiver desligada. Sem ela, o som continua em loop e os botões ficam na notificação, mas a tela não abre sozinha.
-- **"Alarmes e lembretes"** desligado: o Android pode atrasar o alarme (o app mostra ⚠️ Permitir alarmes na hora certa).
+- **Android 14+**: a tela cheia precisa da permissão "Notificações em tela cheia". Se ela estiver desligada, o botão ⚠️ de Ajustes > Despertador pede essa permissão. Sem ela, o som continua em loop e os botões ficam na notificação, mas a tela não abre sozinha.
+- **"Alarmes e lembretes"** desligado: o Android pode atrasar o alarme (o botão ⚠️ de Ajustes > Despertador pede essa permissão).
+- Ajustes > Despertador tem **um só botão ⚠️** para as permissões do alarme que faltam ("⚠️ Permitir alarmes e tela cheia"; se faltar só uma, ele diz qual). Ele pede uma de cada vez: primeiro "Alarmes e lembretes", depois a tela cheia (`src/logica/permissoes.ts`).
 - Com a tela **ligada e desbloqueada** usando outro app, o Android mostra o alarme como aviso no topo (com os 2 botões), não em tela cheia. É regra do Android.
 - **Samsung/One UI**: economia de bateria e "Apps em suspensão" podem atrasar ou matar o alarme: tire o app da economia (abaixo). Se o celular pedir **"Exibir sobre outros apps"**, permita (o app não pede essa permissão, mas algumas versões da One UI perguntam).
 - **Não Perturbe**: na Samsung, os **alarmes** tocam no Não Perturbe por padrão ("Alarmes" ligado nas exceções). Se ele estiver desligado lá, o som não sai.
@@ -101,7 +102,7 @@ Como funciona (módulo nativo local `modules/plantinha-alarme`, entra no APK pel
 ## Para o Paulo (no A23)
 1. Baixe o APK mais novo (`plantinha-sedenta-abas.apk`, v1.2.0) e toque nele. Toque em **Atualizar** (instala por cima, seus copos ficam). Se pedir, permita **"Instalar apps desconhecidos"** para o Chrome (ou Arquivos).
 2. Abra o app. Se o despertador estiver desligado, ligue o **⏰ Despertador** (aba **⚙️ Ajustes**). Permita tudo que o celular pedir: **notificações**, **alarmes e lembretes** e **tela cheia**.
-3. Se aparecer um botão **⚠️** (na aba Hoje ou em Ajustes > Despertador), toque nele e ative o que ele pedir. Volte para o app.
+3. Se aparecer um botão **⚠️** (na aba Hoje ou em Ajustes > Despertador), toque nele e ative o que ele pedir (pode pedir 2 coisas, uma depois da outra). Volte para o app.
 4. Tire da economia de bateria: **Configurações > Aplicativos > Plantinha Sedenta > Bateria > Sem restrições**.
 5. Depois: **Configurações > Cuidados com o dispositivo > Bateria > Limites de uso em segundo plano**. Se a Plantinha estiver em "Apps em suspensão" ou "Apps em suspensão profunda", tire de lá.
 6. Suba o **volume de alarme** (botão de volume > ⋮ ou ⚙️ > Alarme).
