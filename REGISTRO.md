@@ -148,3 +148,10 @@ Pedido: Paulo (via Coordenador de Apps) aprovou a proposta B: 4 abas fixas embai
 - `/workspace/jogos/agua-expo-entrega/plantinha-sedenta-abas.apk` — 26.351.355 bytes, sha256 `a3f410bea40cc01ac482b77f22f833e89d8967214436b220e7c65bc7bb6beefc`, package `br.com.minanoideias.plantinhasedenta`, 1.2.0 / versionCode 3, arm64-v8a, mesma chave de debug (certificado SHA-256 `fac61745…033b9c`, igual ao `plantinha-sedenta-organizado.apk`): instala por cima sem perder dados.
 - **Não testado em aparelho** (o emulador da box travou nas 2 vezes anteriores; não tentei de novo). Checklist do A23 no README ("Teste das abas no A23").
 - Prints da web a 390×844 com **dados simulados**: `/workspace/jogos/agua-expo-entrega/prints-abas/` (gerados por `testes-web/prints-abas.cjs`).
+
+## 28/10/2026 — Sem rolagem em nenhuma tela (pedido do Paulo via Líder Pedro) — branch `fix/sem-rolagem`
+- Base: `a4fa61b` (main do GitHub, já com o PR 5 das abas mesclado). Sem versão nova, sem APK, sem deploy.
+- Mudou só tela: `src/componentes/Tela.tsx` (sem `ScrollView`), `Encaixe.tsx` (novo: cabe inteiro; se não couber, reduz em escala), `Dialogos.tsx` (janelas com Encaixe), `src/telas/*` e `estilos.ts` (Hoje: planta preenche o espaço; Histórico: barras em %; Ajustes: intervalos numa linha, Das/Até lado a lado, testes lado a lado; fontes/espaços menores). Fora de `src/`: só `testes-web/` e README/REGISTRO.
+- Não mexido: lógica, dados, lembretes, alarme nativo (a `AlarmeActivity` Java já não rola), `app.json`, `eas.json`, `package.json`.
+- Testes: tsc OK; Jest 115/115; expo-doctor 17/18 (só o aviso de versões do SDK, não atualizei); export web OK; teste web 46/46 (42 + 4 [sem rolagem]); `sem-rolagem.cjs` 80/80 em 412x915 e 360x740 (+ 360x640 e fonte 1,3x informativos, todos sem rolagem e sem corte; Ajustes e janelas reduzem a 0,93 em 360x740 e 0,80 em 360x640).
+- Prints 412x915 (dados simulados): `/workspace/jogos/agua-expo-entrega/prints-sem-rolagem/`.

@@ -26,8 +26,7 @@ export default function Ajustes({ p }: { p: Plantinha }) {
       <Mensagem p={p} />
 
       <View style={st.painel} accessibilityLabel="Meta">
-        <Text style={st.h2}>🎯 Meta do dia</Text>
-        <Text testID="aMeta" style={st.rotulo}>{e.meta + ' copos de ' + e.copoMl + ' ml = ' + e.meta * e.copoMl + ' ml (' + L.litros(e.meta * e.copoMl) + ')'}</Text>
+        <Text style={st.rotulo}><Text style={st.h2}>🎯 Meta do dia: </Text><Text testID="aMeta">{e.meta + ' copos de ' + e.copoMl + ' ml = ' + e.meta * e.copoMl + ' ml (' + L.litros(e.meta * e.copoMl) + ')'}</Text></Text>
         <Botao testID="config" onPress={p.abrirMeta} style={[st.sec, st.cheio]} textStyle={st.secTx}>✏️ Mudar copo e meta</Botao>
         <Text style={st.aviso}>A meta é só uma referência ajustável, não é orientação médica. Na dúvida, converse com seu médico.</Text>
       </View>
@@ -45,18 +44,24 @@ export default function Ajustes({ p }: { p: Plantinha }) {
             <Botao key={i} testID={'dInt' + i} onPress={() => p.mudarDesp('intervalo', i)} pressed={d.intervalo === i} style={[st.opcao, d.intervalo === i && st.opcaoOn]} textStyle={[st.opcaoTx, d.intervalo === i && { color: '#002' }]}>{ROTULO_INT[i]}</Botao>
           ))}
         </View>
-        {(['inicio', 'fim'] as const).map((k) => (
-          <View key={k} style={st.hora}>
-            <Text style={[st.rotulo, { width: 52 }]}>{k === 'inicio' ? 'Das' : 'Até'}</Text>
-            <Botao testID={k + 'Menos'} rotulo={'Mais cedo'} onPress={() => p.mudarDesp(k, hhmmMais(d[k], -15))} style={st.passo} textStyle={st.passoTx}>−</Botao>
-            <Text testID={k === 'inicio' ? 'dIni' : 'dFim'} style={st.horaTx}>{d[k]}</Text>
-            <Botao testID={k + 'Mais'} rotulo={'Mais tarde'} onPress={() => p.mudarDesp(k, hhmmMais(d[k], 15))} style={st.passo} textStyle={st.passoTx}>+</Botao>
-          </View>
-        ))}
+        <View style={st.horas}>
+          {(['inicio', 'fim'] as const).map((k) => (
+            <View key={k} style={st.horaCol}>
+              <Text style={st.rotulo}>{k === 'inicio' ? 'Das' : 'Até'}</Text>
+              <View style={st.hora}>
+                <Botao testID={k + 'Menos'} rotulo={'Mais cedo'} onPress={() => p.mudarDesp(k, hhmmMais(d[k], -15))} style={st.passo} textStyle={st.passoTx}>−</Botao>
+                <Text testID={k === 'inicio' ? 'dIni' : 'dFim'} style={st.horaTx}>{d[k]}</Text>
+                <Botao testID={k + 'Mais'} rotulo={'Mais tarde'} onPress={() => p.mudarDesp(k, hhmmMais(d[k], 15))} style={st.passo} textStyle={st.passoTx}>+</Botao>
+              </View>
+            </View>
+          ))}
+        </View>
         <Text style={st.rotulo}>😴 Soneca: 10 min (botão "Daqui a pouco" no alarme)</Text>
         <Text testID="dProx" style={st.prox} accessibilityLiveRegion="polite">{proxTxt}</Text>
-        <Botao testID="dTeste" onPress={p.testarDespertador} style={[st.sec, st.cheio]} textStyle={st.secTx}>🔊 Testar despertador</Botao>
-        {AVISA_FECHADO && <Botao testID="dTesteFechado" onPress={p.testarFechado} style={[st.sec, st.cheio]} textStyle={st.secTx}>⏱️ Testar lembrete em 1 min</Botao>}
+        <View style={st.linha}>
+          <Botao testID="dTeste" onPress={p.testarDespertador} style={st.sec} textStyle={st.secTx}>🔊 Testar despertador</Botao>
+          {AVISA_FECHADO && <Botao testID="dTesteFechado" onPress={p.testarFechado} style={st.sec} textStyle={st.secTx}>⏱️ Testar lembrete em 1 min</Botao>}
+        </View>
         <Text style={st.aviso}>{Platform.OS === 'web' ? 'Mantenha o app aberto; ele toca enquanto estiver aberto ou recém-fechado.' : ALARME_NATIVO ? 'Toca como despertador, até com o app fechado e a tela bloqueada, e só para quando você tocar em "Já bebi" ou "Daqui a pouco". Precisa das notificações ativadas. Celular desligado não toca.' : 'Com o app aberto, toca o alarme. Com o app fechado ou a tela apagada, o celular toca o lembrete (precisa das notificações ativadas). Celular desligado não toca.'}</Text>
       </View>
     </Tela>

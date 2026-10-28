@@ -15,7 +15,8 @@ npm run doctor          # expo-doctor
 npm run export:web      # gera dist/ (é o que a Vercel publica)
 npm run preview:web     # serve dist/ em http://localhost:4173
 npm run test:web        # teste no Chrome headless a 412 px (precisa de puppeteer-core)
-node testes-web/prints-abas.cjs <pasta>   # prints das 4 abas a 390x844 (dados simulados)
+node testes-web/prints-abas.cjs <pasta> [LxA] # prints das 4 abas e janelas (390x844 ou LxA) (dados simulados)
+node testes-web/sem-rolagem.cjs          # nenhuma tela rola nem corta (412x915, 360x740; 360x640 e fonte 1,3x informativos)
 ```
 
 Build Android (APK de teste): `npx eas-cli build -p android --profile preview` (precisa de conta Expo).
@@ -32,7 +33,7 @@ src/
   estado/               usePlantinha.ts: estado ÚNICO do jogo + efeitos (carregar, relógios 30 s/15 s,
                         reagendar, permissões) + ações (beber, desfazer, meta, despertador, soneca, testes)
   telas/                uma por aba: Hoje, Historico, Conquistas, Ajustes + estilos.ts
-  componentes/          Botao, Planta (SVG), Efeitos (gotinha, confete), Tela (moldura da aba),
+  componentes/          Botao, Planta (SVG), Efeitos (gotinha, confete), Tela (moldura da aba, sem rolagem), Encaixe (faz caber),
                         Mensagem, Dialogos (meta, tela do alarme, aviso de medalha)
   logica/               regras sem tela, testadas no Jest:
                         jogo.ts (copos, meta, histórico, despertador, medalhas),
@@ -50,6 +51,17 @@ Chaves do AsyncStorage: `plantinhaSedenta.v1`, `.despertador`, `.medalhas` (igua
 
 ## Abas (v1.2.0)
 4 abas fixas embaixo (proposta B): **💧 Hoje** (planta, ml de hoje / meta, "Bebi um copo", "Desfazer", próximo lembrete, sequência), **📊 Histórico** (últimos 7 dias + média), **🏅 Conquistas** (6 medalhas), **⚙️ Ajustes** (copo e meta, despertador, soneca 10 min, testes e botões ⚠️ de permissão). Se faltar permissão do alarme, a aba Hoje mostra um botão ⚠️ que leva para Ajustes. O app sempre abre em Hoje.
+
+## Sem rolagem
+Nenhuma tela rola (abas, janelas meta/alarme, aviso de medalha): não há `ScrollView`. A planta da aba Hoje e o gráfico do Histórico ocupam o espaço que sobra; se o conteúdo não couber (tela pequena ou fonte do sistema grande), `src/componentes/Encaixe.tsx` reduz a tela inteira proporcionalmente, sem esconder nada. Conferido por `testes-web/sem-rolagem.cjs`.
+
+### Teste sem rolagem no A14
+1. Instale/abra o app (ou o link de preview da Vercel no Chrome: ele mostra a versão web).
+2. Em cada aba (Hoje, Histórico, Conquistas, Ajustes), tente arrastar a tela para cima: nada deve rolar.
+3. Confira que nada está cortado: título no alto, barra de abas embaixo; em Hoje, "Bebi um copo" e "Desfazer" visíveis.
+4. Ajustes: os 5 intervalos, Das/Até com − e +, "Testar despertador" e o texto de baixo aparecem inteiros.
+5. Ajustes > "Mudar copo e meta": a janela aparece inteira com "Salvar". "Testar despertador": a tela de alarme aparece inteira.
+6. Beba o 1º copo do dia: o aviso de medalha aparece sem empurrar nada.
 
 ## Google Play
 Nada publicado. O que falta e o passo a passo estão em [docs/play-store/](docs/play-store/README.md): assinatura com chave de upload, revisão das permissões (há riscos reais com `USE_EXACT_ALARM` e o serviço `mediaPlayback`), rascunhos da política de privacidade e da ficha, e a lista do que depende do Paulo.
