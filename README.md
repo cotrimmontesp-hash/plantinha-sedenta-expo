@@ -9,25 +9,31 @@ Precisa de **Node 22.13+**.
 ```bash
 npm install
 npx expo start          # abre no celular (development build) ou na web (tecla w)
-npm test                # testes da lógica (Jest, 111; 1 deles compila o Java do alarme e precisa de JDK)
+npm test                # testes da lógica (Jest, 115; 1 deles compila o Java do alarme e precisa de JDK)
 npm run typecheck       # TypeScript
 npm run doctor          # expo-doctor
 npm run export:web      # gera dist/ (é o que a Vercel publica)
 npm run preview:web     # serve dist/ em http://localhost:4173
 npm run test:web        # teste no Chrome headless a 412 px (precisa de puppeteer-core)
+node testes-web/prints-abas.cjs <pasta>   # prints das 4 abas a 390x844 (dados simulados)
 ```
 
 Build Android (APK de teste): `npx eas-cli build -p android --profile preview` (precisa de conta Expo).
 
 ## Estrutura
 ```
-App.tsx                 só monta a tela (SafeArea + StatusBar + <Jogo />)
+App.tsx                 só monta o app (SafeArea + StatusBar + <Navegacao />)
 index.ts                registra o app (e o service worker na web)
 src/
   tipos.ts              TODOS os tipos TypeScript num lugar só
   tema.ts               cores
-  telas/                Jogo.tsx (a tela) + Jogo.estilos.ts
-  componentes/          Botao, Planta (SVG), Efeitos (gotinha, confete)
+  navegacao/            Navegacao.tsx (raiz: 1 estado para as 4 abas + janelas), BarraAbas.tsx
+                        (barra própria, fixa embaixo), abas.ts (nomes/emoji/ordem, testado no Jest)
+  estado/               usePlantinha.ts: estado ÚNICO do jogo + efeitos (carregar, relógios 30 s/15 s,
+                        reagendar, permissões) + ações (beber, desfazer, meta, despertador, soneca, testes)
+  telas/                uma por aba: Hoje, Historico, Conquistas, Ajustes + estilos.ts
+  componentes/          Botao, Planta (SVG), Efeitos (gotinha, confete), Tela (moldura da aba),
+                        Mensagem, Dialogos (meta, tela do alarme, aviso de medalha)
   logica/               regras sem tela, testadas no Jest:
                         jogo.ts (copos, meta, histórico, despertador, medalhas),
                         agenda.ts (agenda de 7 dias), eventos.ts (toques no alarme nativo)
@@ -35,12 +41,15 @@ src/
                         alarmeNativo.ts (ponte para o módulo Java), som.ts, vibrar.ts
   dados/                armazenamento.ts (AsyncStorage)
 modules/plantinha-alarme/   módulo nativo Android (Java/Kotlin) do alarme com o app fechado
-__tests__/              Jest (111), inclusive Java x JS
-testes-web/             teste no Chrome headless (35 itens) e prints
+__tests__/              Jest (115), inclusive Java x JS
+testes-web/             teste no Chrome headless (42 itens) e prints
 docs/play-store/        preparação para a Google Play (nada publicado)
 scripts/                gerar ícones, splash e som
 ```
 Chaves do AsyncStorage: `plantinhaSedenta.v1`, `.despertador`, `.medalhas` (iguais desde o PWA).
+
+## Abas (v1.2.0)
+4 abas fixas embaixo (proposta B): **💧 Hoje** (planta, ml de hoje / meta, "Bebi um copo", "Desfazer", próximo lembrete, sequência), **📊 Histórico** (últimos 7 dias + média), **🏅 Conquistas** (6 medalhas), **⚙️ Ajustes** (copo e meta, despertador, soneca 10 min, testes e botões ⚠️ de permissão). Se faltar permissão do alarme, a aba Hoje mostra um botão ⚠️ que leva para Ajustes. O app sempre abre em Hoje.
 
 ## Google Play
 Nada publicado. O que falta e o passo a passo estão em [docs/play-store/](docs/play-store/README.md): assinatura com chave de upload, revisão das permissões (há riscos reais com `USE_EXACT_ALARM` e o serviço `mediaPlayback`), rascunhos da política de privacidade e da ficha, e a lista do que depende do Paulo.
@@ -58,7 +67,7 @@ Como funciona (módulo nativo local `modules/plantinha-alarme`, entra no APK pel
 - "Já bebi" e "Daqui a pouco" com o app fechado ficam gravados no celular como **eventos**. Quando o app abre (ou a cada 15 s com ele aberto), `src/logica/eventos.ts` aplica esses eventos com a lógica do app (`beber()` na hora do toque, `soneca()`), salva no AsyncStorage e confere as medalhas. Um "Já bebi" às 23h50 conta para o dia certo.
 - O app manda o despertador e o último copo para o lado nativo sempre que algo muda (`sincronizarAlarme`). Com o app aberto, quem toca também é o alarme nativo (o alarme dentro do app não dispara no Android, para não tocar 2 vezes).
 - Depois de **reiniciar** o celular, **atualizar** o app ou **mudar a hora**, `ReceptorBoot` agenda de novo. Ao abrir a nova versão, o app apaga os lembretes antigos do expo-notifications (APK anterior).
-- Botão **⏱️ Testar lembrete em 1 min**: toca o alarme de teste (não mexe no despertador). No teste, "Já bebi" conta 1 copo de verdade (dá para desfazer) e "Daqui a pouco" toca de novo em 10 min.
+- Botão **⏱️ Testar lembrete em 1 min** (aba Ajustes): toca o alarme de teste (não mexe no despertador). No teste, "Já bebi" conta 1 copo de verdade (dá para desfazer) e "Daqui a pouco" toca de novo em 10 min.
 - Permissões Android: `POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`, `USE_EXACT_ALARM`, `USE_FULL_SCREEN_INTENT`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED`, `VIBRATE`. **Não** usa `SYSTEM_ALERT_WINDOW` (continua bloqueada).
 - iOS/web: sem mudança (iOS usa as notificações do expo-notifications; web como o PWA).
 - APK local (sem conta Expo), na box: `npx expo prebuild -p android` e `cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a` (JDK 17 + Android SDK). Assinado com a chave de **debug** do template (a mesma do APK anterior, por isso instala por cima): serve para instalar direto, **não** para a Google Play.
@@ -78,20 +87,31 @@ Como funciona (módulo nativo local `modules/plantinha-alarme`, entra no APK pel
 - Na **web** continua como antes: sem push, só avisa com a aba aberta (ou recém-fechada).
 
 ## Para o Paulo (no A23)
-1. Baixe o arquivo `plantinha-sedenta-alarme.apk` e toque nele. Toque em **Atualizar** (instala por cima, seus copos ficam). Se pedir, permita **"Instalar apps desconhecidos"** para o Chrome (ou Arquivos).
-2. Abra o app. Se o despertador estiver desligado, ligue o **⏰ Despertador**. Permita tudo que o celular pedir: **notificações**, **alarmes e lembretes** e **tela cheia**.
-3. Se aparecer um botão **⚠️** no despertador, toque nele e ative o que ele pedir. Volte para o app.
+1. Baixe o APK mais novo (`plantinha-sedenta-abas.apk`, v1.2.0) e toque nele. Toque em **Atualizar** (instala por cima, seus copos ficam). Se pedir, permita **"Instalar apps desconhecidos"** para o Chrome (ou Arquivos).
+2. Abra o app. Se o despertador estiver desligado, ligue o **⏰ Despertador** (aba **⚙️ Ajustes**). Permita tudo que o celular pedir: **notificações**, **alarmes e lembretes** e **tela cheia**.
+3. Se aparecer um botão **⚠️** (na aba Hoje ou em Ajustes > Despertador), toque nele e ative o que ele pedir. Volte para o app.
 4. Tire da economia de bateria: **Configurações > Aplicativos > Plantinha Sedenta > Bateria > Sem restrições**.
 5. Depois: **Configurações > Cuidados com o dispositivo > Bateria > Limites de uso em segundo plano**. Se a Plantinha estiver em "Apps em suspensão" ou "Apps em suspensão profunda", tire de lá.
 6. Suba o **volume de alarme** (botão de volume > ⋮ ou ⚙️ > Alarme).
 
 ### Teste no A23 (6 itens)
-1. Toque em **⏱️ Testar lembrete em 1 min**, saia do app e **apague a tela**. Em 1 min a tela deve acender com "Hora de beber água!", tocando sem parar.
+1. Em **⚙️ Ajustes**, toque em **⏱️ Testar lembrete em 1 min**, saia do app e **apague a tela**. Em 1 min a tela deve acender com "Hora de beber água!", tocando sem parar.
 2. Espere uns 30 s: deve continuar tocando. Toque em **Já bebi 💧**: o som para. Abra o app: tem 1 copo a mais.
 3. Toque de novo em **⏱️ Testar lembrete em 1 min**, apague a tela e, quando tocar, toque em **Daqui a pouco**. O som para e **toca de novo em 10 min**. Responda **Já bebi**.
 4. Com o despertador ligado e o app fechado, espere o horário de "Próximo lembrete": deve tocar igual.
 5. **Reinicie** o celular, não abra o app, e espere o próximo lembrete: deve tocar.
 6. Desligue o despertador e espere o horário: **não** deve tocar.
+
+### Teste das abas no A23 (v1.2.0)
+1. Baixe `plantinha-sedenta-abas.apk` e toque em **Atualizar** (instala por cima; **não** desinstale).
+2. Abra: em **💧 Hoje**, os copos de hoje e a sequência são os de antes. Em **📊 Histórico**, os dias anteriores estão lá. Em **🏅 Conquistas**, as medalhas ganhas continuam.
+3. Toque nas 4 abas embaixo: cada uma abre e a barra não fica escondida atrás dos botões do Android.
+4. Em **Hoje**, toque em **Bebi um copo**: o número sobe. Veja que o **Histórico** (barra de hoje) e as **Conquistas** mudaram junto. Toque em **Desfazer** para voltar.
+5. Em **⚙️ Ajustes**, mude a meta (✏️ Mudar copo e meta > Salvar) e o despertador (intervalo, Das/Até). Volte para **Hoje**: a meta e o "Próximo lembrete" mudaram.
+6. Em **Ajustes**, toque em **⏱️ Testar lembrete em 1 min**, saia do app e **apague a tela**: em 1 min ela acende e toca sem parar.
+7. Toque em **Já bebi 💧** na tela do alarme: o som para.
+8. Abra o app de novo: em **Hoje** tem 1 copo a mais (o do teste; dá para desfazer).
+9. Se aparecer um botão **⚠️** (em Hoje ou em Ajustes), toque nele e permita o que o celular pedir.
 
 ## Limite (web)
 **Sem push.** Na web o despertador só funciona com a aba aberta (ou fechada há pouco).

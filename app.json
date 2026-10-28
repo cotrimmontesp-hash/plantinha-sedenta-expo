@@ -2,7 +2,7 @@
   "expo": {
     "name": "Plantinha Sedenta",
     "slug": "plantinha-sedenta",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Jogo para lembrar de beber água: cada copo faz a plantinha crescer.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "br.com.minanoideias.plantinhasedenta",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",

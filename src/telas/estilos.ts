@@ -1,4 +1,4 @@
-// Estilos da tela principal (mesmas medidas e cores do PWA v5).
+// Estilos das 4 abas (mesmas medidas e cores do PWA v5; os novos das abas estão no fim).
 import { StyleSheet } from 'react-native';
 import { cor } from '../tema';
 
@@ -8,10 +8,6 @@ export const st = StyleSheet.create({
   main: { width: '100%', maxWidth: 480, paddingTop: 14, paddingHorizontal: 16, paddingBottom: 28, gap: 12 },
   h1: { fontSize: 28, fontWeight: '700', color: cor.texto, textAlign: 'center', marginTop: 4 },
   h2: { fontSize: 22, fontWeight: '700', color: cor.texto },
-  placar: { flexDirection: 'row', gap: 10 },
-  caixa: { flex: 1, backgroundColor: cor.cartao, borderWidth: 2, borderColor: cor.borda, borderRadius: 16, padding: 10, alignItems: 'center' },
-  caixaB: { fontSize: 30, fontWeight: '700', color: cor.agua, textAlign: 'center' },
-  caixaS: { fontSize: 17, color: cor.suave, textAlign: 'center' },
   barra: { height: 22, backgroundColor: cor.escuro, borderRadius: 12, overflow: 'hidden', borderWidth: 2, borderColor: cor.borda },
   barraIn: { height: '100%', backgroundColor: cor.agua },
   palco: { backgroundColor: '#14344b', borderRadius: 20, borderWidth: 2, borderColor: cor.borda, overflow: 'hidden', position: 'relative' },
@@ -19,7 +15,6 @@ export const st = StyleSheet.create({
   msgAlerta: { backgroundColor: cor.alertaFundo, borderWidth: 2, borderColor: cor.botao, borderRadius: 14, padding: 10 },
   beber: { backgroundColor: cor.botao, borderRadius: 18, paddingVertical: 22, paddingHorizontal: 10, minHeight: 92, justifyContent: 'center', borderBottomWidth: 6, borderBottomColor: cor.botaoSombra },
   beberTx: { fontSize: 30, fontWeight: '800', color: cor.botaoTx, textAlign: 'center' },
-  linha: { flexDirection: 'row', gap: 10 },
   sec: { flex: 1, borderWidth: 3, borderColor: cor.contorno, borderRadius: 18, paddingVertical: 14, paddingHorizontal: 8, minHeight: 60, justifyContent: 'center' },
   cheio: { flex: 0, width: '100%' },
   secTx: { fontSize: 19, color: cor.texto, textAlign: 'center' },
@@ -66,4 +61,15 @@ export const st = StyleSheet.create({
   alBebiTx: { fontSize: 28, fontWeight: '800', color: '#111', textAlign: 'center' },
   toast: { position: 'absolute', left: 12, right: 12, bottom: 18, backgroundColor: cor.botao, borderRadius: 16, padding: 14, elevation: 8, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 18, shadowOffset: { width: 0, height: 6 } },
   toastTx: { fontSize: 22, fontWeight: '800', color: '#111', textAlign: 'center' },
+  // abas (v1.2.0)
+  conteudo: { flex: 1 },
+  progresso: { alignItems: 'center' },
+  progressoTx: { textAlign: 'center' },
+  progressoMl: { fontWeight: '800', color: cor.agua },
+  progressoMeta: { fontSize: 22, fontWeight: '600', color: cor.suave },
+  progressoCopos: { fontSize: 18, color: cor.suave, textAlign: 'center' },
+  desfazer: { flex: 0, alignSelf: 'center', minWidth: 230, minHeight: 56, paddingVertical: 10 },
+  infoHoje: { fontSize: 20, fontWeight: '700', color: cor.texto, textAlign: 'center' },
+  alertaBotao: { backgroundColor: cor.alertaFundo, borderColor: cor.botao },
+  histAlto: { height: 260 },
 });
