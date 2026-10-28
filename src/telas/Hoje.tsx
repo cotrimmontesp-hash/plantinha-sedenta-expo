@@ -1,4 +1,5 @@
 // Aba Hoje: planta, progresso (ml de hoje / meta), "Bebi um copo", "Desfazer", próximo lembrete e sequência.
+import { useState } from 'react';
 import { Text, View, useWindowDimensions } from 'react-native';
 import * as L from '../logica/jogo';
 import { ALARME_NATIVO, AVISA_FECHADO } from '../lembretes/notificacoes';
@@ -12,13 +13,15 @@ import { Confete, Gota } from '../componentes/Efeitos';
 import { st } from './estilos';
 
 /** Placar numa linha só: diminui a fonte em textos longos. */
-const tam = (t: string) => ({ fontSize: t.length >= 9 ? 30 : 36 });
+const tam = (t: string) => ({ fontSize: t.length >= 9 ? 30 : 34 });
 
 export default function Hoje({ p, irPara }: { p: Plantinha; irPara: (a: AbaId) => void }) {
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
+  const [altPalco, setAltPalco] = useState(0);
   const e = p.est, d = p.desp;
   const larguraMain = Math.min(width, 480) - 32;
-  const larguraPlanta = Math.min(larguraMain - 4, (height * 0.3 * 300) / 320); // menor que na tela única: a aba cabe sem rolar
+  // sem rolagem: a planta ocupa o espaço que sobra na tela (o palco cresce/encolhe com flex)
+  const larguraPlanta = Math.max(40, Math.min(larguraMain - 8, ((altPalco - 8) * 300) / 320));
   const s = L.estagio(e);
   const prox = p.prox;
   const proxTxt = prox === null ? 'Despertador desligado.' : 'Próximo lembrete às ' + L.hhmm(prox) + (L.diaDe(prox) !== L.diaDe(Date.now()) ? ' (amanhã)' : '') + (d.soneca ? ' 😴' : '');
@@ -27,8 +30,8 @@ export default function Hoje({ p, irPara }: { p: Plantinha; irPara: (a: AbaId) =
 
   return (
     <Tela titulo="🌱 Hoje">
-      <View style={st.palco}>
-        <View style={{ width: larguraPlanta, alignSelf: 'center' }}>
+      <View style={st.palco} onLayout={(ev) => setAltPalco(ev.nativeEvent.layout.height)}>
+        <View style={{ width: larguraPlanta }}>
           <Planta estagio={s} murcha={p.murcha} largura={larguraPlanta} />
           {p.gotas.map((g) => <Gota key={g} largura={larguraPlanta} onFim={() => p.tirarGota(g)} />)}
         </View>

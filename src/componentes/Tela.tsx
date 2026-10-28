@@ -1,15 +1,17 @@
-// Moldura comum das abas: rolagem (para celulares pequenos), coluna de até 480 px e título da aba.
+// Moldura comum das abas: SEM rolagem. Coluna de até 480 px com o título da aba, que ocupa a altura
+// disponível (acima da barra de abas); o Encaixe reduz tudo proporcionalmente se não couber.
 import type { ReactNode } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import Encaixe from './Encaixe';
 import { st } from '../telas/estilos';
 
 export default function Tela({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
-    <ScrollView contentContainerStyle={st.rolagem} keyboardShouldPersistTaps="handled">
+    <Encaixe style={st.centro}>
       <View style={st.main}>
         <Text style={st.h1} accessibilityRole="header">{titulo}</Text>
         {children}
       </View>
-    </ScrollView>
+    </Encaixe>
   );
 }
