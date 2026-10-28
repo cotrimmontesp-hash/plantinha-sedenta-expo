@@ -1,6 +1,7 @@
 // Teste da versão web exportada (dist/) no Chrome headless, tela de celular 412 px.
 // Uso: npx expo export -p web && NODE_PATH=<pasta com puppeteer-core> node testes-web/teste-web.cjs
 // Dados SIMULADOS: o histórico da semana e a "sede" são injetados no armazenamento só para o teste.
+// v1.2.0 (abas): cada item procura o texto na aba onde ele mora agora (aba(...) troca de aba antes); itens [abas] são novos.
 const { spawn } = require('child_process');
 const path = require('path');
 const puppeteer = require('puppeteer-core');
@@ -23,6 +24,7 @@ const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
     const T = (id) => E((i) => { const el = document.querySelector(`[data-testid="${i}"]`); return el ? el.textContent : null; }, id);
     const toque = async (id) => { const s = `[data-testid="${id}"]`; await pg.waitForSelector(s, { visible: true }); await pg.$eval(s, (e) => e.scrollIntoView({ block: 'center' })); await dorme(100); try { await pg.click(s); } catch { await dorme(500); await pg.click(s); } await dorme(150); }; // 2ª tentativa: fade do Modal
     const shot = async (nome, topo = true) => { if (topo) await E(() => document.querySelector('[role=heading]').scrollIntoView({ block: 'start' })); await dorme(400); await pg.screenshot({ path: path.join(SHOTS, nome) }); };
+    const aba = async (id) => { await pg.click(`[data-testid="aba-${id}"]`); await pg.waitForSelector(`[data-testid="aba-${id}"][aria-selected="true"]`); await dorme(150); };
     const tela = async (nome) => { await dorme(300); await pg.screenshot({ path: path.join(SHOTS, nome), fullPage: false }); };
 
     await pg.goto(URL0, { waitUntil: 'networkidle0' });
@@ -30,7 +32,11 @@ const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
     await pg.waitForSelector('[data-testid="beber"]');
     check(await T('copos') === '0/8' && await T('ml') === '0 ml' && await T('metaMl') === '2000', 'início: 0/8, 0 ml de 2000 ml');
     check(/Olá! Toque no botão amarelo/.test(await T('msg')), 'mensagem de boas-vindas');
-    check(await T('hResumo') === 'Ainda sem histórico' && await T('mResumo') === '0 de 6 medalhas', 'sem histórico e 0 de 6 medalhas');
+    check(await E(() => ['hoje', 'historico', 'conquistas', 'ajustes'].map((i) => document.querySelector(`[data-testid="aba-${i}"]`)?.textContent).join('|')) === '💧Hoje|📊Histórico|🏅Conquistas|⚙️Ajustes', '[abas] as 4 abas aparecem: Hoje, Histórico, Conquistas, Ajustes');
+    check(await E(() => { const b = document.querySelector('[data-testid="aba-hoje"]').getBoundingClientRect(); return b.height >= 56 && b.bottom <= innerHeight + 1 && b.bottom >= innerHeight - 2 && document.querySelector('[data-testid="aba-hoje"]').getAttribute('aria-selected') === 'true'; }), '[abas] barra fixa embaixo, botões >= 56 px, abre em Hoje');
+    check(await E(() => { const b = document.querySelector('[data-testid="beber"]').getBoundingClientRect(), a = document.querySelector('[data-testid="aba-hoje"]').getBoundingClientRect(); return b.bottom <= a.top; }), '[abas] "Bebi um copo" visível sem rolar (acima da barra)');
+    await aba('historico'); const hR0 = await T('hResumo'); await aba('conquistas'); const mR0 = await T('mResumo'); await aba('hoje');
+    check(hR0 === 'Ainda sem histórico' && mR0 === '0 de 6 medalhas', 'sem histórico e 0 de 6 medalhas');
     check(await E(() => document.documentElement.scrollWidth <= 412), 'sem rolagem lateral em 412 px');
     check(await E(() => { const b = document.querySelector('[data-testid="beber"]').getBoundingClientRect(); return b.height >= 88; }), 'botão "Bebi um copo" grande (>= 88 px)');
     check(await E(() => !!document.querySelector('link[rel=manifest]') && document.documentElement.lang === 'pt-BR'), 'manifest ligado e idioma pt-BR');
@@ -39,15 +45,17 @@ const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
     await toque('beber');
     check(await T('copos') === '1/8' && await T('ml') === '250 ml', '1 copo: 1/8, 250 ml');
     check(/Nova medalha: 💧 Primeiro gole/.test(await T('toast') || ''), 'aviso de medalha "Primeiro gole"');
-    check(await T('mResumo') === '1 de 6 medalhas', '1 de 6 medalhas');
+    await aba('conquistas'); check(await T('mResumo') === '1 de 6 medalhas', '1 de 6 medalhas'); await aba('hoje');
     await toque('desfazer');
     check(await T('copos') === '0/8' && /desfeito/.test(await T('msg')), 'desfazer volta para 0/8');
     for (let i = 0; i < 8; i++) await toque('beber');
     check(await T('copos') === '8/8' && await T('seq') === '1' && /Meta do dia batida/.test(await T('msg')), '8 copos: meta batida, sequência 1');
     check(await E(() => window.__plantinha.estado().historico[window.__plantinha.estado().dia].ml === 2000), 'histórico de hoje: 2000 ml');
-    check(/Bateu a meta em 1 de 7 dias · média 2000 ml\/dia/.test(await T('hResumo')), 'resumo da semana atualizado');
-    check(await T('mResumo') === '2 de 6 medalhas', 'Flor aberta ganha (2 de 6)');
     await shot('02-meta-batida.png');
+    await aba('historico'); check(/Bateu a meta em 1 de 7 dias · média 2000 ml\/dia/.test(await T('hResumo')), 'resumo da semana atualizado');
+    await aba('conquistas'); check(await T('mResumo') === '2 de 6 medalhas', 'Flor aberta ganha (2 de 6)');
+    await aba('hoje'); check(await T('copos') === '8/8' && await T('seq') === '1', '[abas] trocar de aba mantém o estado (8/8 e sequência 1 de volta na Hoje)');
+    await aba('ajustes');
 
     await toque('config');
     check(await T('copoTxt') === '250' && await T('metaLitros') === '= 2000 ml (2 litros)', 'diálogo: 250 ml, = 2000 ml (2 litros)');
@@ -55,9 +63,12 @@ const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
     check(await T('metaVal') === '4' && await T('metaLitros') === '= 2000 ml (2 litros)', '500 ml x 4 = 2000 ml');
     await tela('03-dialogo-meta.png');
     await toque('salvar');
-    check(await T('copos') === '8/4' && await T('ml') === '4000 ml' && /Meta salva: 4 copos de 500 ml \(2000 ml = 2 litros\)/.test(await T('msg')), 'meta salva: 8/4, 4000 ml');
-    await toque('config'); await toque('ml250'); for (let i = 0; i < 4; i++) await toque('mais'); await toque('salvar');
+    const msgMeta = await T('msg'), aMeta = await T('aMeta'); await aba('hoje');
+    check(await T('copos') === '8/4' && await T('ml') === '4000 ml' && /Meta salva: 4 copos de 500 ml \(2000 ml = 2 litros\)/.test(msgMeta), 'meta salva: 8/4, 4000 ml');
+    check(aMeta === '4 copos de 500 ml = 2000 ml (2 litros)', '[abas] Ajustes mostra a meta salva');
+    await aba('ajustes'); await toque('config'); await toque('ml250'); for (let i = 0; i < 4; i++) await toque('mais'); await toque('salvar'); await aba('hoje');
     check(await T('copos') === '8/8' && await T('ml') === '2000 ml', 'volta para 8 x 250 ml');
+    await aba('ajustes');
 
     // despertador
     await toque('dLiga');
@@ -78,12 +89,17 @@ const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
     check(!!(await T('alTit')) && /Hora de beber água/.test(await T('msg')), 'alarme vencido dispara a tela de alarme');
     await toque('alBebi');
     await dorme(600); // espera o fade do Modal
-    check(await T('copos') === '9/8' && !(await T('alTit')), '"Bebi um copo" no alarme registra o copo e fecha');
+    const fechou = !(await T('alTit')); await aba('hoje');
+    check(await T('copos') === '9/8' && fechou, '"Bebi um copo" no alarme registra o copo e fecha');
+    check(/^⏰ Próximo lembrete às \d\d:\d\d/.test(await T('hProx')), '[abas] Hoje mostra o próximo lembrete');
+    await aba('conquistas');
     check(await T('mResumo') === '3 de 6 medalhas' && await E(() => !!window.__plantinha.medalhas().desp), 'Despertador amigo ganha (3 de 6)');
 
     // persistência
     await pg.reload({ waitUntil: 'networkidle0' }); await pg.waitForSelector('[data-testid="beber"]');
-    check(await T('copos') === '9/8' && /Bem-vindo de volta! 9 copo/.test(await T('msg')) && await T('mResumo') === '3 de 6 medalhas' && /Ligado/.test(await T('dLiga')), 'recarregar mantém copos, medalhas e despertador');
+    { const c = await T('copos'), m = await T('msg'); await aba('conquistas'); const mr = await T('mResumo'); await aba('ajustes'); const dl = await T('dLiga'); await aba('historico'); const hr = await T('hResumo'); await aba('hoje');
+      check(c === '9/8' && /Bem-vindo de volta! 9 copo/.test(m) && mr === '3 de 6 medalhas' && /Ligado/.test(dl), 'recarregar mantém copos, medalhas e despertador');
+      check(/média 2250 ml\/dia/.test(hr), '[abas] recarregar mantém o histórico (média 2250 ml/dia na aba Histórico)'); }
     check(await E(() => ['plantinhaSedenta.v1', 'plantinhaSedenta.despertador', 'plantinhaSedenta.medalhas'].every((k) => !!localStorage.getItem(k))), 'mesmas chaves do PWA no armazenamento');
 
     // SIMULADO: semana com 7 dias batidos + sequência 7 => Semana perfeita e 7 dias seguidos
@@ -96,8 +112,9 @@ const dorme = (ms) => new Promise((r) => setTimeout(r, ms));
       localStorage.setItem('plantinhaSedenta.v1', JSON.stringify(s));
     });
     await pg.reload({ waitUntil: 'networkidle0' }); await pg.waitForSelector('[data-testid="beber"]');
-    check(await T('mResumo') === '6 de 6 medalhas' && /Bateu a meta em 7 de 7 dias/.test(await T('hResumo')), '[simulado] 7 dias batidos: 6 de 6 medalhas, 7 de 7 dias');
-    await pg.$eval('[data-testid="hist"]', (e) => e.scrollIntoView({ block: 'start' })); await tela('05-historico-medalhas-SIMULADO.png');
+    await aba('conquistas'); const mr7 = await T('mResumo'); await tela('05b-conquistas-SIMULADO.png'); await aba('historico'); const hr7 = await T('hResumo');
+    check(mr7 === '6 de 6 medalhas' && /Bateu a meta em 7 de 7 dias/.test(hr7), '[simulado] 7 dias batidos: 6 de 6 medalhas, 7 de 7 dias');
+    await tela('05-historico-SIMULADO.png'); await aba('hoje');
 
     // SIMULADO: sede (último copo há 2 h, meta não batida)
     await E(() => { const s = JSON.parse(localStorage.getItem('plantinhaSedenta.v1')); s.copos = 3; s.ultimoGole = Date.now() - 2 * 3600e3; localStorage.setItem('plantinhaSedenta.v1', JSON.stringify(s));
